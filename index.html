@@ -115,6 +115,116 @@
       .logo img { height: 40px; }
       .hero img.hero-logo { height: 90px; }
     }
+    /* Language Modal */
+    .modal {
+      display: none; 
+      position: fixed; 
+      z-index: 1000; 
+      left: 0; top: 0; width: 100%; height: 100%; 
+      background-color: rgba(0,0,0,0.6); 
+      align-items: center; justify-content: center;
+    }
+    .modal-content {
+      background-color: #ffffff;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .modal-header h2 { margin: 0; color: var(--green-dark); }
+    .close-btn {
+      font-size: 2rem;
+      cursor: pointer;
+      color: var(--muted);
+      line-height: 1;
+    }
+    .close-btn:hover { color: var(--text); }
+    #lang-search {
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    #lang-list {
+      list-style: none;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    #lang-list li {
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      border: 1px solid transparent;
+    }
+    #lang-list li:hover {
+      background-color: var(--green-light);
+      border-color: var(--line);
+      color: var(--green-dark);
+    }
+    /* Mega Dropdown */
+    .dropdown { position: static; }
+    .mega-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background-color: var(--green-dark);
+      color: #ffffff;
+      z-index: 100;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      padding: 3rem 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .dropdown:hover .mega-menu { display: block; }
+    .mega-content {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      gap: 4rem;
+      justify-content: space-between;
+    }
+    .mega-left { flex: 1; max-width: 350px; }
+    .mega-left h2 { color: #ffffff; font-size: 2.2rem; margin-bottom: 0.5rem; }
+    .mega-left p { color: var(--line); line-height: 1.6; font-size: 1.05rem; }
+    
+    .mega-right { flex: 1; display: flex; flex-direction: column; gap: 1.5rem; }
+    .mega-link {
+      display: flex;
+      gap: 1.2rem;
+      color: #ffffff;
+      text-decoration: none;
+      align-items: flex-start;
+      padding: 0.75rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+      margin: -0.75rem; /* negate padding for layout */
+    }
+    .mega-link:hover { background-color: rgba(255,255,255,0.08); }
+    .mega-link .icon { font-size: 1.5rem; line-height: 1.2; opacity: 0.8; }
+    .mega-link strong { display: block; font-size: 1.15rem; margin-bottom: 0.2rem; color: #ffffff; }
+    .mega-link span { color: var(--line); font-size: 0.95rem; line-height: 1.4; display: block; }
+    /* Hide the native Google Translate widget */
+    #google_translate_element { display: none !important; }
+    .skiptranslate iframe { display: none !important; }
+    body { top: 0 !important; }
   </style>
 </head>
 <body>
@@ -124,13 +234,58 @@
       <img src="bookwell-logo-full.png" alt="BookWell logo">
     </a>
     <ul>
-      <li><a href="#mission">Mission</a></li>
+      <li class="dropdown">
+        <a href="#about" class="dropbtn">About Us ▾</a>
+        <div class="mega-menu">
+          <div class="mega-content">
+            <div class="mega-left">
+              <h2>About Us</h2>
+              <p>Discover our mission to foster learning. Learn about our funding policies, and commitment to open-access resources.</p>
+            </div>
+            <div class="mega-right">
+              <a href="#mission" class="mega-link">
+                <div>
+                  <strong>Mission</strong>
+                  <span>Making quality learning resources easy to find and free to use everywhere.</span>
+                </div>
+              </a>
+              <a href="#funding" class="mega-link">
+                <div>
+                  <strong>Funding</strong>
+                  <span>Financial transparency disclosures, and student research grants.</span>
+                </div>
+              </a>
+              <a href="#locations" class="mega-link">
+                <div>
+                  <strong>Locations</strong>
+                  <span>Discover our global reach, worldwide mission, and community.</span>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </li>
       <li><a href="#library">Library</a></li>
       <li><a href="#volunteer">Volunteer</a></li>
-      <li><a href="#about">About</a></li>
       <li><a href="#contact">Contact</a></li>
+      <li><a href="#" id="lang-btn">Language</a></li>
     </ul>
   </nav>
+
+  <!-- Hidden Google Translate Element -->
+  <div id="google_translate_element"></div>
+
+  <!-- Custom Language Modal -->
+  <div id="lang-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Select Language</h2>
+        <span class="close-btn">&times;</span>
+      </div>
+      <input type="text" id="lang-search" placeholder="Search languages...">
+      <ul id="lang-list"></ul>
+    </div>
+  </div>
 
   <header class="hero" id="top">
     <img class="hero-logo" src="bookwell-logo-full.png" alt="BookWell">
@@ -200,5 +355,67 @@
     <p><a href="#top">Back to top</a></p>
   </footer>
 
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  
+  <script>
+    let availableLanguages = [];
+    const langBtn = document.getElementById('lang-btn');
+    const langModal = document.getElementById('lang-modal');
+    const closeBtn = document.querySelector('.close-btn');
+    const langSearch = document.getElementById('lang-search');
+    const langList = document.getElementById('lang-list');
+
+    function renderLanguages(filter = '') {
+      langList.innerHTML = '';
+      availableLanguages.filter(l => l.name.toLowerCase().includes(filter.toLowerCase())).forEach(lang => {
+        const li = document.createElement('li');
+        li.textContent = lang.name;
+        li.onclick = () => {
+          const select = document.querySelector('.goog-te-combo');
+          if (select) {
+            select.value = lang.code;
+            select.dispatchEvent(new Event('change'));
+          }
+          langModal.style.display = 'none';
+        };
+        langList.appendChild(li);
+      });
+    }
+
+    function loadGoogleLanguages() {
+      const select = document.querySelector('.goog-te-combo');
+      if (select && select.options.length > 1) {
+        availableLanguages = Array.from(select.options)
+          .filter(opt => opt.value)
+          .map(opt => ({ code: opt.value, name: opt.textContent }));
+        // Ensure English is available to revert back
+        if (!availableLanguages.find(l => l.code === 'en')) {
+          availableLanguages.unshift({ code: 'en', name: 'English' });
+        }
+      } else {
+        setTimeout(loadGoogleLanguages, 500);
+      }
+    }
+
+    langBtn.onclick = (e) => {
+      e.preventDefault();
+      langModal.style.display = 'flex';
+      langSearch.value = '';
+      renderLanguages();
+      langSearch.focus();
+    };
+
+    closeBtn.onclick = () => langModal.style.display = 'none';
+    window.onclick = (e) => { if (e.target == langModal) langModal.style.display = 'none'; };
+    langSearch.oninput = (e) => renderLanguages(e.target.value);
+
+    // Start polling to load languages once widget is ready
+    loadGoogleLanguages();
+  </script>
 </body>
 </html>
