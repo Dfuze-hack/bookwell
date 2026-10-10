@@ -23,37 +23,48 @@
       flex-wrap: wrap;
       gap: 0.75rem;
       background: #fff;
-      border-bottom: 1px solid #e6e1d6;
+      border-bottom: 1px solid #d9e5d2;
       position: sticky;
       top: 0;
       z-index: 10;
     }
     .logo { display: inline-block; }
-    .logo img { display: block; height: 48px; width: auto; }
+    .logo img {
+      display: block;
+      height: 48px;
+      width: auto;
+      mix-blend-mode: multiply;
+    }
     nav ul { list-style: none; display: flex; gap: 1rem; flex-wrap: wrap; }
     nav a { color: #2b2b2b; text-decoration: none; }
-    nav a:hover { color: #1f4d7a; text-decoration: underline; }
+    nav a:hover { color: #2e5b3b; text-decoration: underline; }
     .hero {
       text-align: center;
       padding: 4rem 1.5rem;
-      background: linear-gradient(135deg, #e8f1f7, #eef5ea, #fdfcf9);
+      background: linear-gradient(135deg, #e3efdc, #f4f8f1, #fdfcf9);
     }
-    .hero img.hero-logo { height: 110px; width: auto; margin: 0 auto 1.25rem; display: block; }
-    .hero h1 { font-size: 2.4rem; color: #1f4d7a; margin-bottom: 0.5rem; }
+    .hero img.hero-logo {
+      height: 110px;
+      width: auto;
+      margin: 0 auto 1.25rem;
+      display: block;
+      mix-blend-mode: multiply;
+    }
+    .hero h1 { font-size: 2.4rem; color: #2e5b3b; margin-bottom: 0.5rem; }
     .hero p { font-size: 1.15rem; max-width: 640px; margin: 0 auto 1.5rem; }
     .button {
       display: inline-block;
-      background: #1f4d7a;
+      background: #2e5b3b;
       color: #fff;
       padding: 0.7rem 1.4rem;
       border-radius: 6px;
       text-decoration: none;
       margin: 0.3rem;
     }
-    .button.secondary { background: #fff; color: #1f4d7a; border: 2px solid #1f4d7a; }
+    .button.secondary { background: #fff; color: #2e5b3b; border: 2px solid #2e5b3b; }
     .button:hover { opacity: 0.9; }
     section { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.5rem; }
-    h2 { color: #1f4d7a; font-size: 1.8rem; margin-bottom: 1rem; }
+    h2 { color: #2e5b3b; font-size: 1.8rem; margin-bottom: 1rem; }
     h3 { font-size: 1.15rem; margin-bottom: 0.4rem; color: #2e5b3b; }
     .grid {
       display: grid;
@@ -63,7 +74,7 @@
     }
     .card {
       background: #fff;
-      border: 1px solid #e6e1d6;
+      border: 1px solid #d9e5d2;
       border-top: 4px solid #2e5b3b;
       border-radius: 8px;
       padding: 1.2rem;
@@ -71,7 +82,7 @@
     .highlight { background: #f4f8f1; max-width: none; }
     .highlight > * { max-width: 960px; margin-left: auto; margin-right: auto; }
     .placeholder {
-      border: 2px dashed #b9c9b0;
+      border: 2px dashed #9fbf93;
       background: #fff;
       padding: 1.5rem;
       border-radius: 8px;
@@ -80,12 +91,20 @@
     }
     footer {
       text-align: center;
-      background: #1f4d7a;
+      background: #2e5b3b;
       color: #fff;
       margin-top: 2rem;
       font-size: 0.95rem;
     }
-    footer img { height: 56px; width: auto; margin: 0 auto 0.5rem; display: block; background: #fff; border-radius: 8px; padding: 6px; }
+    footer img {
+      height: 56px;
+      width: auto;
+      margin: 0 auto 0.5rem;
+      display: block;
+      background: #fff;
+      border-radius: 8px;
+      padding: 6px;
+    }
     footer a { color: #fff; }
     @media (max-width: 600px) {
       .hero h1 { font-size: 1.9rem; }
