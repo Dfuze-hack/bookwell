@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="BookWell provides free, legal books and learning resources for students everywhere, organized by class, subject, and language.">
   <title>BookWell | Free Books and Learning Resources</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232e5b3b'/%3E%3Cpath d='M12 18h16c4 0 6 2 6 6v24c0-3-2-4-6-4H12z M52 18H36c-4 0-6 2-6 6v24c0-3 2-4 6-4h16z' fill='white'/%3E%3C/svg%3E">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -24,8 +25,10 @@
       border-bottom: 1px solid #e6e1d6;
       position: sticky;
       top: 0;
+      z-index: 10;
     }
-    .logo { font-size: 1.4rem; font-weight: bold; color: #2e5b3b; text-decoration: none; }
+    .logo { text-decoration: none; display: inline-block; }
+    .logo svg { display: block; height: 40px; width: auto; }
     nav ul { list-style: none; display: flex; gap: 1rem; flex-wrap: wrap; }
     nav a { color: #2b2b2b; text-decoration: none; }
     nav a:hover { color: #2e5b3b; text-decoration: underline; }
@@ -62,7 +65,8 @@
       border-radius: 8px;
       padding: 1.2rem;
     }
-    .highlight { background: #f4f8f1; }
+    .highlight { background: #f4f8f1; max-width: none; }
+    .highlight > * { max-width: 960px; margin-left: auto; margin-right: auto; }
     .placeholder {
       border: 2px dashed #b9c9b0;
       background: #fff;
@@ -82,13 +86,20 @@
     @media (max-width: 600px) {
       .hero h1 { font-size: 1.9rem; }
       nav ul { gap: 0.6rem; font-size: 0.95rem; }
+      .logo svg { height: 34px; }
     }
   </style>
 </head>
 <body>
 
   <nav>
-    <a href="#top" class="logo">BookWell</a>
+    <a href="#top" class="logo" aria-label="BookWell home">
+      <svg width="180" height="40" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BookWell">
+        <rect x="0" y="6" width="28" height="28" rx="6" fill="#2e5b3b"/>
+        <path d="M7 13h7c2 0 3 1 3 3v9c0-2-1-3-3-3H7z M21 13h-7c-2 0-3 1-3 3v9c0-2 1-3 3-3h7z" fill="white"/>
+        <text x="38" y="28" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="bold" fill="#2e5b3b">BookWell</text>
+      </svg>
+    </a>
     <ul>
       <li><a href="#mission">Mission</a></li>
       <li><a href="#library">Library</a></li>
