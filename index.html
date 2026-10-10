@@ -9,11 +9,19 @@
   <link rel="apple-touch-icon" href="bookwell_icon.png">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green-dark: #1f4d33;
+      --green: #2e7d4f;
+      --green-light: #e8f4ec;
+      --text: #1e2b22;
+      --muted: #4a5a4f;
+      --line: #d6e6da;
+    }
     body {
       font-family: Georgia, "Times New Roman", serif;
-      color: #2b2b2b;
+      color: var(--text);
       line-height: 1.6;
-      background: #fdfcf9;
+      background: #ffffff;
     }
     header, nav, section, footer { padding: 1rem 1.5rem; }
     nav {
@@ -22,50 +30,45 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 0.75rem;
-      background: #fff;
-      border-bottom: 1px solid #d9e5d2;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
       position: sticky;
       top: 0;
       z-index: 10;
     }
     .logo { display: inline-block; }
-    .logo img {
-      display: block;
-      height: 48px;
-      width: auto;
-      mix-blend-mode: multiply;
-    }
+    .logo img { display: block; height: 48px; width: auto; }
     nav ul { list-style: none; display: flex; gap: 1rem; flex-wrap: wrap; }
-    nav a { color: #2b2b2b; text-decoration: none; }
-    nav a:hover { color: #2e5b3b; text-decoration: underline; }
+    nav a { color: var(--text); text-decoration: none; }
+    nav a:hover { color: var(--green); text-decoration: underline; }
     .hero {
       text-align: center;
-      padding: 4rem 1.5rem;
-      background: linear-gradient(135deg, #e3efdc, #f4f8f1, #fdfcf9);
+      padding: 3.5rem 1.5rem;
+      background: linear-gradient(180deg, var(--green-light), #ffffff);
     }
     .hero img.hero-logo {
-      height: 110px;
+      height: 120px;
       width: auto;
-      margin: 0 auto 1.25rem;
+      margin: 0 auto 1.5rem;
       display: block;
-      mix-blend-mode: multiply;
     }
-    .hero h1 { font-size: 2.4rem; color: #2e5b3b; margin-bottom: 0.5rem; }
-    .hero p { font-size: 1.15rem; max-width: 640px; margin: 0 auto 1.5rem; }
+    .hero h1 { font-size: 2.2rem; color: var(--green-dark); margin-bottom: 0.5rem; }
+    .hero p { font-size: 1.15rem; max-width: 640px; margin: 0 auto 1.5rem; color: var(--muted); }
     .button {
       display: inline-block;
-      background: #2e5b3b;
-      color: #fff;
+      background: var(--green);
+      color: #ffffff;
       padding: 0.7rem 1.4rem;
       border-radius: 6px;
       text-decoration: none;
       margin: 0.3rem;
+      border: 2px solid var(--green);
     }
-    .button.secondary { background: #fff; color: #2e5b3b; border: 2px solid #2e5b3b; }
+    .button.secondary { background: #ffffff; color: var(--green); }
     .button:hover { opacity: 0.9; }
     section { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.5rem; }
-    h2 { color: #2e5b3b; font-size: 1.8rem; margin-bottom: 1rem; }
-    h3 { font-size: 1.15rem; margin-bottom: 0.4rem; color: #2e5b3b; }
+    h2 { color: var(--green-dark); font-size: 1.8rem; margin-bottom: 1rem; }
+    h3 { font-size: 1.15rem; margin-bottom: 0.4rem; color: var(--green); }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -73,41 +76,42 @@
       margin-top: 1rem;
     }
     .card {
-      background: #fff;
-      border: 1px solid #d9e5d2;
-      border-top: 4px solid #2e5b3b;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--green);
       border-radius: 8px;
       padding: 1.2rem;
     }
-    .highlight { background: #f4f8f1; max-width: none; }
+    .highlight { background: var(--green-light); max-width: none; }
     .highlight > * { max-width: 960px; margin-left: auto; margin-right: auto; }
     .placeholder {
-      border: 2px dashed #9fbf93;
-      background: #fff;
+      border: 2px dashed #9cc8a8;
+      background: #ffffff;
       padding: 1.5rem;
       border-radius: 8px;
       text-align: center;
-      color: #555;
+      color: var(--muted);
     }
+    .placeholder a { color: var(--green); }
     footer {
       text-align: center;
-      background: #2e5b3b;
-      color: #fff;
+      background: var(--green-dark);
+      color: #ffffff;
       margin-top: 2rem;
       font-size: 0.95rem;
     }
     footer img {
-      height: 56px;
+      height: 70px;
       width: auto;
-      margin: 0 auto 0.5rem;
       display: block;
-      background: #fff;
+      margin: 0 auto 0.75rem;
+      background: #ffffff;
       border-radius: 8px;
-      padding: 6px;
+      padding: 8px;
     }
-    footer a { color: #fff; }
+    footer a { color: #ffffff; }
     @media (max-width: 600px) {
-      .hero h1 { font-size: 1.9rem; }
+      .hero h1 { font-size: 1.7rem; }
       nav ul { gap: 0.6rem; font-size: 0.95rem; }
       .logo img { height: 40px; }
       .hero img.hero-logo { height: 90px; }
@@ -118,7 +122,7 @@
 
   <nav>
     <a href="#top" class="logo" aria-label="BookWell home">
-      <img src="bookwell_logo.png" alt="BookWell logo">
+      <img src="bookwell-logo-full.png" alt="BookWell logo">
     </a>
     <ul>
       <li><a href="#mission">Mission</a></li>
@@ -130,7 +134,7 @@
   </nav>
 
   <header class="hero" id="top">
-    <img class="hero-logo" src="bookwell_logo.png" alt="BookWell">
+    <img class="hero-logo" src="bookwell-logo-full.png" alt="BookWell">
     <h1>Free, legal books for every student</h1>
     <p>BookWell gathers free and openly licensed learning resources, organized by class, subject, and language, so students everywhere can learn without barriers.</p>
     <a href="#library" class="button">Browse the Library</a>
@@ -193,7 +197,7 @@
   </section>
 
   <footer>
-    <img src="bookwell_icon.png" alt="BookWell icon">
+    <img src="bookwell-logo-full.png" alt="BookWell logo">
     <p>&copy; 2026 BookWell. Free for everyone.</p>
     <p><a href="#top">Back to top</a></p>
   </footer>
