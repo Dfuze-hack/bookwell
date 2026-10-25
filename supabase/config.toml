@@ -1,2 +1,8 @@
 [functions.create-download]
 verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.payment-webhook]
+verify_jwt = false

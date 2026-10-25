@@ -3,6 +3,7 @@
 
   const PAGE_SIZE = 12;
   const core = window.BookWellMarketplaceCore;
+  const commerceCore = window.BookWellCommerceCore;
   const config = window.BOOKWELL_CONFIG || {};
   const elements = {
     form: document.getElementById("catalog-filters"),
@@ -12,8 +13,13 @@
     format: document.getElementById("catalog-format"),
     minPrice: document.getElementById("catalog-min-price"),
     maxPrice: document.getElementById("catalog-max-price"),
+    currency: document.getElementById("catalog-currency"),
     sort: document.getElementById("catalog-sort"),
+    clear: document.getElementById("catalog-clear"),
     status: document.getElementById("catalog-status"),
+    emptyActions: document.getElementById("catalog-empty-actions"),
+    diagnostics: document.getElementById("catalog-diagnostics"),
+    diagnosticText: document.getElementById("catalog-diagnostic-text"),
     results: document.getElementById("catalog-results"),
     more: document.getElementById("catalog-more"),
     retry: document.getElementById("catalog-retry"),
@@ -44,30 +50,24 @@
       config.supabaseAnonKey.length > 20;
   }
 
-  function setStatus(message, isError) {
+  function setStatus(message, isError, state) {
     elements.status.textContent = message;
     elements.status.hidden = false;
     elements.status.setAttribute("role", isError ? "alert" : "status");
     elements.retry.hidden = !isError;
+    elements.status.className = "catalog-status state-" + (state || (isError ? "error" : "loading"));
+    elements.emptyActions.hidden = state !== "empty" && state !== "disconnected";
   }
 
   function clearStatus() {
     elements.status.hidden = true;
     elements.retry.hidden = true;
+    elements.emptyActions.hidden = true;
+    elements.diagnostics.hidden = true;
   }
 
   function money(product) {
-    if (product.price_minor === 0) return "Free";
-    const amount = product.price_minor / 100;
-    const currency = product.currency || "INR";
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: currency
-      }).format(amount);
-    } catch {
-      return currency + " " + amount.toFixed(2);
-    }
+    return core.formatPrice(product.price_minor, product.currency, navigator.language);
   }
 
   function addText(parent, tag, text, className) {
@@ -78,8 +78,22 @@
     return node;
   }
 
-  function addBadge(parent, label) {
-    addText(parent, "span", label, "product-badge");
+  function addBadge(parent, label, extraClass) {
+    addText(parent, "span", label, "product-badge" + (extraClass ? " " + extraClass : ""));
+  }
+
+  function saveButton(product) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button secondary";
+    button.dataset.saveProductId = product.id;
+    const saved = window.BookWellAccount?.isSaved(product.id) || false;
+    button.textContent = saved ? "Saved" : "Save";
+    button.setAttribute("aria-pressed", String(saved));
+    button.addEventListener("click", function () {
+      window.BookWellAccount?.toggleSavedProduct(product);
+    });
+    return button;
   }
 
   async function setPreviewSource(image, previewPath) {
@@ -120,7 +134,9 @@
     const card = document.createElement("article");
     card.className = "card product-card";
     card.dataset.slug = product.slug;
-    addText(card, "h3", product.title);
+    const title = document.createElement("h3");
+    title.textContent = product.title;
+    card.appendChild(title);
     if (typeof product.preview_path === "string") {
       const preview = document.createElement("img");
       preview.alt = "";
@@ -129,13 +145,17 @@
       preview.className = "product-preview";
       card.insertBefore(preview, card.children[1]);
       showPreview(preview, product.preview_path);
+    } else {
+      const cover = addText(card, "div", product.formats[0] || "Learning resource", "product-cover-fallback");
+      cover.setAttribute("aria-hidden", "true");
     }
-    addText(card, "p", product.description);
+    addText(card, "p", product.description, "product-description");
 
     const metadata = document.createElement("div");
     metadata.className = "product-meta";
     addBadge(metadata, product.category_name);
-    addBadge(metadata, money(product));
+    if (typeof product.language === "string" && product.language.trim()) addBadge(metadata, product.language);
+    addBadge(metadata, money(product), "price-badge");
     if (product.included_with_premium) addBadge(metadata, "Premium included");
     card.appendChild(metadata);
     addText(card, "p", "By " + product.creator_name);
@@ -150,6 +170,7 @@
       openProduct(product);
     });
     actions.appendChild(details);
+    actions.appendChild(saveButton(product));
     if (product.price_minor === 0) {
       const download = document.createElement("button");
       download.type = "button";
@@ -159,6 +180,15 @@
         downloadProduct(product);
       });
       actions.appendChild(download);
+    } else {
+      const buy = document.createElement("button");
+      buy.type = "button";
+      buy.className = "button";
+      buy.textContent = "Buy";
+      buy.addEventListener("click", function () {
+        purchaseProduct(product, buy);
+      });
+      actions.appendChild(buy);
     }
     card.appendChild(actions);
     elements.results.appendChild(card);
@@ -179,6 +209,9 @@
     }
     addText(elements.dialogContent, "p", product.description);
     addText(elements.dialogContent, "p", "Category: " + product.category_name);
+    if (typeof product.language === "string" && product.language.trim()) {
+      addText(elements.dialogContent, "p", "Language: " + product.language);
+    }
     addText(elements.dialogContent, "p", "Creator: " + product.creator_name);
     addText(elements.dialogContent, "p", "Price: " + money(product));
     addText(elements.dialogContent, "p", "Licence: " + product.license);
@@ -190,6 +223,10 @@
     const tags = document.createElement("p");
     tags.textContent = "Tags: " + product.tags.join(", ");
     elements.dialogContent.appendChild(tags);
+    const saveActions = document.createElement("div");
+    saveActions.className = "product-actions";
+    saveActions.appendChild(saveButton(product));
+    elements.dialogContent.appendChild(saveActions);
     if (product.price_minor === 0) {
       const download = document.createElement("button");
       download.type = "button";
@@ -200,7 +237,15 @@
       });
       elements.dialogContent.appendChild(download);
     } else {
-      addText(elements.dialogContent, "p", "Online checkout is not enabled yet. Paid resources are not downloadable until secure payments are configured.");
+      addText(elements.dialogContent, "p", "One-time access to this resource. The private file becomes available only after BookWell verifies payment.");
+      const buy = document.createElement("button");
+      buy.type = "button";
+      buy.className = "button";
+      buy.textContent = "Buy " + money(product);
+      buy.addEventListener("click", function () {
+        purchaseProduct(product, buy);
+      });
+      elements.dialogContent.appendChild(buy);
     }
   }
 
@@ -249,12 +294,13 @@
     setStatus("Checking download access…", false);
     try {
       async function getSignedDownloadUrl() {
+        const accessToken = await window.BookWellAccountClient?.getAccessToken();
         const response = await fetch(config.supabaseUrl.replace(/\/$/, "") + "/functions/v1/create-download", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             apikey: config.supabaseAnonKey,
-            Authorization: "Bearer " + config.supabaseAnonKey
+            Authorization: "Bearer " + (accessToken || config.supabaseAnonKey)
           },
           body: JSON.stringify({ productId: product.id })
         });
@@ -296,6 +342,67 @@
     }
   }
 
+  async function purchaseProduct(product, button) {
+    if (!product || !product.id || product.price_minor <= 0) {
+      setStatus("This product is not available for purchase.", true);
+      return;
+    }
+    const accessToken = await window.BookWellAccountClient?.getAccessToken().catch(() => null);
+    if (!accessToken) {
+      try {
+        sessionStorage.setItem("bookwell-return-product", product.slug);
+      } catch {
+        setStatus("Sign in before purchasing. You can reopen this resource from the Library afterward.", false);
+      }
+      window.location.hash = "#account";
+      setStatus("Sign in or create an account to continue to checkout. You’ll return to this resource afterward.", false);
+      return;
+    }
+    if (!configured()) {
+      setStatus("Secure checkout is not configured. No payment has been taken.", true);
+      return;
+    }
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Preparing secure checkout…";
+    }
+    setStatus("Preparing secure checkout…", false);
+    try {
+      const response = await fetch(config.supabaseUrl.replace(/\/$/, "") + "/functions/v1/create-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: config.supabaseAnonKey,
+          Authorization: "Bearer " + accessToken
+        },
+        body: JSON.stringify({ productId: product.id, requestId: crypto.randomUUID() })
+      });
+      let result = {};
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error("The checkout service returned an invalid response.");
+      }
+      if (!response.ok) {
+        if (result.code === "already_owned" || result.status === "already_owned") {
+          setStatus("You already have access to this resource. It is available in My Library.", false);
+          return;
+        }
+        throw new Error(result.error || "Secure checkout is currently unavailable. No payment has been taken.");
+      }
+      const checkoutUrl = commerceCore.checkoutUrl(result.checkoutUrl);
+      if (typeof result.orderId !== "string") throw new Error("The checkout service returned an invalid purchase reference.");
+      window.location.assign(checkoutUrl);
+    } catch (error) {
+      setStatus(error.message || "Secure checkout is currently unavailable. No payment has been taken.", true);
+    } finally {
+      if (button?.isConnected) {
+        button.disabled = false;
+        button.textContent = "Buy " + money(product);
+      }
+    }
+  }
+
   async function loadCategories() {
     while (elements.category.options.length > 1) elements.category.remove(1);
     const url = config.supabaseUrl.replace(/\/$/, "") +
@@ -317,10 +424,20 @@
     if (!configured()) {
       elements.results.hidden = true;
       elements.more.hidden = true;
-      setStatus("The product catalog is not connected yet. Configure the public Supabase URL and anon key after applying the documented database setup. No sample or invented products are shown.", false);
+      const hasValues = Boolean(config.supabaseUrl || config.supabaseAnonKey);
+      setStatus(
+        "We’re preparing the BookWell library. Please check back soon as learning resources are added.",
+        false,
+        "disconnected"
+      );
+      elements.diagnostics.hidden = false;
+      elements.diagnosticText.textContent = hasValues
+        ? "Catalogue diagnostics: the configured Supabase URL or public anon key is invalid or incomplete."
+        : "Catalogue diagnostics: no Supabase project URL/public anon key is configured. No sample products are displayed.";
       return;
     }
     if (append && loadingMore) return;
+    if (!append) offset = 0;
     const currentRequest = ++requestId;
     let parameters;
     try {
@@ -329,17 +446,19 @@
         category: elements.category.value,
         priceType: elements.price.value,
         fileFormat: elements.format.value,
+        currency: elements.currency.value,
         sort: elements.sort.value,
         minPrice: elements.minPrice.value,
         maxPrice: elements.maxPrice.value
       }, PAGE_SIZE, offset);
     } catch (error) {
       setStatus(error.message, true);
+      elements.diagnostics.hidden = false;
+      elements.diagnosticText.textContent = error.message;
       elements.retry.hidden = true;
       return;
     }
     if (!append) {
-      offset = 0;
       elements.results.replaceChildren();
       elements.results.hidden = true;
       elements.more.hidden = true;
@@ -368,16 +487,20 @@
       elements.results.hidden = elements.results.childElementCount === 0;
       elements.more.hidden = !hasMore;
       if (offset === 0) {
-        const message = parameters.p_price_type === "paid"
-          ? "Paid products are unavailable until verified payment processing is implemented."
-          : "No published resources match those filters. Try another search.";
-        setStatus(message, false);
+        const hasFilters = Boolean(parameters.p_search || parameters.p_category || parameters.p_file_format ||
+          parameters.p_price_type || parameters.p_min_price_minor !== null || parameters.p_max_price_minor !== null);
+        const message = hasFilters
+            ? "No resources match those filters yet. Try changing or clearing your filters."
+            : "The library is taking shape. Check back soon for new learning resources.";
+        setStatus(message, false, "empty");
       } else {
         clearStatus();
       }
     } catch (error) {
       if (currentRequest !== requestId) return;
-      setStatus(error.message || "The catalog could not be loaded. Please try again.", true);
+      setStatus("We couldn’t load the library just now. Check your connection and try again.", true, "error");
+      elements.diagnostics.hidden = false;
+      elements.diagnosticText.textContent = error.message || "The catalogue request failed.";
     } finally {
       if (append) {
         loadingMore = false;
@@ -401,7 +524,28 @@
   elements.form.addEventListener("change", function (event) {
     if (event.target !== elements.search) loadProducts(false);
   });
+  function updatePriceSteps() {
+    if (!elements.currency.value) {
+      elements.minPrice.step = "any";
+      elements.maxPrice.step = "any";
+      return;
+    }
+    const digits = new Intl.NumberFormat(navigator.language, {
+      style: "currency",
+      currency: elements.currency.value
+    }).resolvedOptions().maximumFractionDigits;
+    const step = digits ? "0." + "0".repeat(Math.max(digits - 1, 0)) + "1" : "1";
+    elements.minPrice.step = step;
+    elements.maxPrice.step = step;
+  }
+  elements.currency.addEventListener("change", updatePriceSteps);
+  updatePriceSteps();
   elements.more.addEventListener("click", function () { loadProducts(true); });
+  elements.clear.addEventListener("click", function () {
+    elements.form.reset();
+    updatePriceSteps();
+    loadProducts(false);
+  });
   elements.retry.addEventListener("click", initializeCatalog);
   elements.dialogClose.addEventListener("click", closeProduct);
   elements.dialog.addEventListener("click", function (event) {
@@ -424,11 +568,19 @@
       await loadCategories();
       await loadProducts(false);
     } catch (error) {
-      setStatus(error.message || "The catalog setup could not be reached. Check the Supabase project configuration and database migration, then retry.", true);
+      setStatus("We couldn’t connect to the resource library. Please try again in a moment.", true, "error");
+      elements.diagnostics.hidden = false;
+      elements.diagnosticText.textContent = error.message || "The catalogue setup could not be reached.";
     }
   }
 
   initializeCatalog();
+  window.BookWellMarketplace = {
+    downloadProduct: downloadProduct,
+    openProduct: openProduct,
+    purchaseProduct: purchaseProduct,
+    showPreview: showPreview
+  };
   const initialProduct = location.hash.match(/^#product\/([a-z0-9-]+)$/);
   if (initialProduct) openProductSlug(initialProduct[1]);
 })();

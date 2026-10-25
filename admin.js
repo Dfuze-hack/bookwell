@@ -15,6 +15,8 @@
     form: document.getElementById("admin-product-form"),
     formTitle: document.getElementById("admin-form-title"),
     products: document.getElementById("admin-products"),
+    purchases: document.getElementById("admin-purchase-list"),
+    language: document.getElementById("admin-product-language"),
     category: document.getElementById("admin-product-category"),
     title: document.getElementById("admin-product-title"),
     slug: document.getElementById("admin-product-slug"),
@@ -26,13 +28,25 @@
     previewListing: document.getElementById("admin-preview-listing"),
     previewDialog: document.getElementById("admin-preview-dialog"),
     previewContent: document.getElementById("admin-preview-content"),
-    previewClose: document.getElementById("admin-preview-close")
+    previewClose: document.getElementById("admin-preview-close"),
+    uploadProgress: document.getElementById("studio-upload-progress"),
+    uploadStatus: document.getElementById("studio-upload-status"),
+    totalProducts: document.getElementById("studio-total-products"),
+    draftProducts: document.getElementById("studio-draft-products"),
+    publishedProducts: document.getElementById("studio-published-products"),
+    archivedProducts: document.getElementById("studio-archived-products"),
+    downloadRequests: document.getElementById("studio-download-requests"),
+    verifiedPurchases: document.getElementById("studio-verified-purchases"),
+    analyticsNote: document.getElementById("studio-analytics-note")
   };
   let accessToken = null;
   let signedInUser = null;
   let productById = new Map();
+  let allProducts = [];
+  let studioFilter = "mine";
   let slugWasEdited = false;
   let previewObjectUrl = null;
+  let formDirty = false;
 
   function isAllowedSupabaseUrl(value) {
     try {
@@ -89,12 +103,37 @@
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
   }
 
-  async function upload(bucket, path, file, contentType) {
+  function upload(bucket, path, file, contentType, onProgress) {
     const safePath = path.split("/").map(encodeURIComponent).join("/");
-    return request("/storage/v1/object/" + bucket + "/" + safePath, {
-      method: "POST",
-      headers: { "Content-Type": contentType, "x-upsert": "false" },
-      body: file
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", apiUrl("/storage/v1/object/" + bucket + "/" + safePath));
+      xhr.setRequestHeader("apikey", config.supabaseAnonKey);
+      xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+      xhr.setRequestHeader("Content-Type", contentType);
+      xhr.setRequestHeader("x-upsert", "false");
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable && typeof onProgress === "function") {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      });
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+          return;
+        }
+        let message = "Storage rejected the upload (HTTP " + xhr.status + ").";
+        try {
+          const body = JSON.parse(xhr.responseText);
+          message = body.message || body.error || message;
+        } catch {
+          // Keep the status-based Storage error when the response is not JSON.
+        }
+        reject(new Error(message));
+      });
+      xhr.addEventListener("error", () => reject(new Error("The upload connection failed. Check your connection and retry.")));
+      xhr.addEventListener("abort", () => reject(new Error("The upload was cancelled before Storage confirmed it.")));
+      xhr.send(file);
     });
   }
 
@@ -147,48 +186,67 @@
       title: data.get("title"),
       slug: data.get("slug"),
       description: data.get("description"),
+      language: data.get("language"),
       license: data.get("license"),
       tags: String(data.get("tags") || ""),
       formats: data.getAll("formats").map(String),
       price: data.get("price"),
+      currency: data.get("currency"),
       status: data.get("status")
     });
     return {
       id: id,
-      creator_id: signedInUser.id,
+      creator_id: productById.get(id)?.creator_id || signedInUser.id,
       category_id: String(data.get("category_id")),
       title: fields.title,
       slug: fields.slug,
       description: fields.description,
+      language: fields.language,
       tags: fields.tags,
       formats: fields.formats,
       license: fields.license,
       price_minor: fields.price_minor,
-      currency: "INR",
+      currency: fields.currency,
       included_with_premium: false,
       status: fields.status
     };
   }
 
-  function fillForm(product) {
+  function fillForm(product, duplicate) {
     elements.form.reset();
-    elements.form.elements.id.value = product?.id || "";
-    elements.title.value = product?.title || "";
-    elements.slug.value = product?.slug || "";
+    const editing = Boolean(product && !duplicate);
+    elements.form.elements.id.value = editing ? product.id : "";
+    elements.title.value = product?.title
+      ? (duplicate ? ("Copy of " + product.title).slice(0, 160) : product.title)
+      : "";
+    elements.slug.value = product?.slug
+      ? (duplicate ? (slugify(product.slug + "-copy").slice(0, 160) || "new-product") : product.slug)
+      : "";
     elements.form.elements.description.value = product?.description || "";
+    elements.language.value = product?.language || "";
     elements.category.value = product?.category_id || "";
     elements.form.elements.license.value = product?.license || "";
     elements.form.elements.tags.value = (product?.tags || []).join(", ");
     elements.form.querySelectorAll('input[name="formats"]').forEach((input) => {
       input.checked = (product?.formats || []).includes(input.value);
     });
-    elements.price.value = ((product?.price_minor || 0) / 100).toFixed(2);
-    elements.productStatus.value = product?.status || "draft";
+    const currency = product?.currency || "INR";
+    elements.form.elements.currency.value = currency;
+    setPriceStep();
+    elements.price.value = window.BookWellMarketplaceCore.amountFromMinor(product?.price_minor || 0, currency)
+      .toFixed(new Intl.NumberFormat(navigator.language, { style: "currency", currency: currency }).resolvedOptions().maximumFractionDigits);
+    elements.productStatus.value = duplicate ? "draft" : (product?.status || "draft");
     elements.file.value = "";
     elements.preview.value = "";
-    elements.formTitle.textContent = product ? "Edit product: " + product.title : "Create product";
+    elements.uploadProgress.hidden = true;
+    elements.uploadProgress.value = 0;
+    elements.uploadStatus.textContent = duplicate
+      ? "Metadata copied into a new draft. Select a new private product file and cover image; storage files are not duplicated."
+      : "";
+    elements.formTitle.textContent = editing ? "Edit product: " + product.title : (duplicate ? "Duplicate product into draft" : "Create product draft");
     elements.form.hidden = false;
-    slugWasEdited = Boolean(product);
+    slugWasEdited = editing || Boolean(duplicate);
+    formDirty = false;
     elements.form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -201,10 +259,12 @@
       if (!category) throw new Error("Choose a valid product category before previewing.");
 
       elements.previewContent.replaceChildren();
+      const card = document.createElement("article");
+      card.className = "card product-card";
       const heading = document.createElement("h2");
       heading.id = "admin-preview-title";
       heading.textContent = product.title;
-      elements.previewContent.appendChild(heading);
+      card.appendChild(heading);
       const selectedPreview = elements.preview.files[0];
       const existing = productById.get(id);
       const previewPath = selectedPreview ? null : existing?.preview_path;
@@ -228,16 +288,36 @@
           );
           image.src = window.BookWellMarketplaceCore.signedPreviewUrl(config.supabaseUrl, result.signedURL);
         }
-        elements.previewContent.appendChild(image);
+        card.appendChild(image);
+      } else {
+        const cover = document.createElement("div");
+        cover.className = "product-cover-fallback";
+        cover.textContent = product.formats[0] || "Learning resource";
+        cover.setAttribute("aria-hidden", "true");
+        card.appendChild(cover);
       }
+      const description = document.createElement("p");
+      description.className = "product-description";
+      description.textContent = product.description;
+      card.appendChild(description);
+      const metadata = document.createElement("div");
+      metadata.className = "product-meta";
+      [category.textContent, product.language,
+        window.BookWellMarketplaceCore.formatPrice(product.price_minor, product.currency, navigator.language),
+        product.status].forEach((value, index) => {
+        const badge = document.createElement("span");
+        badge.className = "product-badge" + (index === 2 ? " price-badge" : "");
+        badge.textContent = value;
+        metadata.appendChild(badge);
+      });
+      card.appendChild(metadata);
+      elements.previewContent.appendChild(card);
       const details = [
-        ["Category", category.textContent],
-        ["Price", product.price_minor === 0 ? "Free" : "INR " + (product.price_minor / 100).toFixed(2)],
-        ["Status", product.status],
-        ["Formats", product.formats.join(", ")],
+        ["Subject", category.textContent],
+        ["Language", product.language],
+        ["Format", product.formats.join(", ")],
         ["Licence", product.license],
-        ["Description", product.description],
-        ["Tags", product.tags.join(", ")]
+        ["Tags", product.tags.join(", ") || "None"]
       ];
       details.forEach(([label, value]) => {
         const paragraph = document.createElement("p");
@@ -255,24 +335,42 @@
 
   function renderProducts(products) {
     productById = new Map(products.map((product) => [product.id, product]));
+    allProducts = products;
+    const visibleProducts = window.BookWellAdminCore.filterProducts(products, studioFilter, signedInUser?.id);
     elements.products.replaceChildren();
-    if (products.length === 0) {
+    if (visibleProducts.length === 0) {
       const empty = document.createElement("p");
-      empty.className = "catalog-status";
-      empty.textContent = "No product listings yet.";
+      empty.className = "studio-empty";
+      empty.textContent = products.length === 0
+        ? "No product listings yet. Create a draft to start a listing."
+        : studioFilter === "mine" && products.length
+          ? "You do not own any listings yet. Use All Products to view the full administration catalog."
+        : "There are no " + (studioFilter === "all" ? "" : studioFilter + " ") + "products in this view.";
       elements.products.appendChild(empty);
       return;
     }
-    products.forEach((product) => {
+    visibleProducts.forEach((product) => {
       const card = document.createElement("article");
-      card.className = "card product-card";
+      card.className = "card studio-product-card";
       const heading = document.createElement("h3");
       heading.textContent = product.title;
       card.appendChild(heading);
       const status = document.createElement("p");
       status.textContent = "Status: " + product.status + " · " +
-        (product.price_minor === 0 ? "Free" : "INR " + (product.price_minor / 100).toFixed(2));
+        window.BookWellMarketplaceCore.formatPrice(product.price_minor, product.currency, navigator.language);
       card.appendChild(status);
+      if (product.language) {
+        const language = document.createElement("p");
+        language.textContent = "Language: " + product.language;
+        card.appendChild(language);
+      }
+      const formats = document.createElement("p");
+      formats.textContent = "Format: " + product.formats.join(", ");
+      card.appendChild(formats);
+      const updated = document.createElement("p");
+      updated.className = "studio-note";
+      updated.textContent = "Updated " + new Date(product.updated_at).toLocaleDateString();
+      card.appendChild(updated);
       const actions = document.createElement("div");
       actions.className = "product-actions";
       const edit = document.createElement("button");
@@ -281,6 +379,21 @@
       edit.textContent = "Edit";
       edit.addEventListener("click", () => fillForm(product));
       actions.appendChild(edit);
+      const duplicate = document.createElement("button");
+      duplicate.type = "button";
+      duplicate.className = "button secondary";
+      duplicate.textContent = "Duplicate";
+      duplicate.addEventListener("click", () => fillForm(product, true));
+      actions.appendChild(duplicate);
+      const publication = document.createElement("button");
+      publication.type = "button";
+      publication.className = "button secondary";
+      publication.textContent = product.status === "published" ? "Archive listing" : "Publish listing";
+      publication.addEventListener("click", () => updateProductStatus(
+        product,
+        product.status === "published" ? "archived" : "published"
+      ));
+      actions.appendChild(publication);
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "button secondary";
@@ -292,12 +405,115 @@
     });
   }
 
+  async function countRows(path) {
+    const headers = new Headers({
+      apikey: config.supabaseAnonKey,
+      Authorization: "Bearer " + accessToken,
+      Prefer: "count=exact",
+      Range: "0-0"
+    });
+    const response = await fetch(apiUrl("/rest/v1/" + path), { method: "HEAD", headers: headers });
+    if (!response.ok) throw new Error("The analytics count could not be loaded.");
+    const contentRange = response.headers.get("content-range") || "";
+    const match = contentRange.match(/\/(\d+)$/);
+    if (!match) throw new Error("The analytics count was not provided by Supabase.");
+    return Number(match[1]);
+  }
+
+  function renderStudioMetrics(products, counts) {
+    elements.totalProducts.textContent = window.BookWellAdminCore.metricValue(counts.total);
+    elements.draftProducts.textContent = window.BookWellAdminCore.metricValue(counts.draft);
+    elements.publishedProducts.textContent = window.BookWellAdminCore.metricValue(counts.published);
+    elements.archivedProducts.textContent = window.BookWellAdminCore.metricValue(counts.archived);
+    elements.downloadRequests.textContent = window.BookWellAdminCore.metricValue(counts.downloadRequests);
+    elements.verifiedPurchases.textContent = window.BookWellAdminCore.metricValue(counts.verifiedPurchases);
+    const notices = [
+      "Link issuance is not a confirmed download.",
+      "Page views and revenue are not tracked."
+    ];
+    if ([counts.total, counts.draft, counts.published, counts.archived].some((count) => count === null)) {
+      notices.push("Some product summary counts are unavailable.");
+    }
+    if (counts.downloadRequests === null) notices.push("Download-link event totals are unavailable.");
+    if (counts.verifiedPurchases === null) notices.push("Verified purchase counts are unavailable until commerce schema and records are configured.");
+    if (products.length === 500) notices.push("Product management is showing the latest 500 listings.");
+    elements.analyticsNote.textContent = notices.join(" ");
+  }
+
+  async function updateProductStatus(product, status) {
+    if (!window.confirm(status === "published"
+      ? "Publish “" + product.title + "”? Public metadata will become visible. Private downloads will still require authorization."
+      : "Archive “" + product.title + "”? It will be removed from public listings.")) return;
+    try {
+      await request("/rest/v1/products?id=eq." + encodeURIComponent(product.id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ status: status })
+      });
+      await loadAdminData();
+      setStatus(status === "published" ? "Product listing published." : "Product listing archived and unpublished.", false);
+    } catch (error) {
+      setStatus(error.message || "The product status could not be updated.", true);
+    }
+  }
+
+  function renderPurchases(orders) {
+    elements.purchases.replaceChildren();
+    if (!orders.length) {
+      const empty = document.createElement("p");
+      empty.className = "purchase-empty";
+      empty.textContent = "No purchase records are available.";
+      elements.purchases.appendChild(empty);
+      return;
+    }
+    orders.forEach((order) => {
+      const row = document.createElement("article");
+      row.className = "purchase-row";
+      const item = order.order_items?.[0];
+      const title = document.createElement("strong");
+      title.textContent = item?.products?.title || "BookWell product";
+      row.appendChild(title);
+      const amount = document.createElement("span");
+      amount.textContent = window.BookWellMarketplaceCore.formatPrice(order.total_minor, order.currency, navigator.language);
+      row.appendChild(amount);
+      const status = document.createElement("span");
+      status.textContent = order.status + (order.verified_at ? " · verified" : "");
+      row.appendChild(status);
+      const created = document.createElement("span");
+      created.textContent = new Date(order.created_at).toLocaleString();
+      row.appendChild(created);
+      const reference = document.createElement("span");
+      reference.textContent = "Order " + order.id + (order.provider_checkout_id
+        ? " · Provider ref " + order.provider_checkout_id : "");
+      row.appendChild(reference);
+      const customer = document.createElement("span");
+      customer.textContent = "Customer " + order.user_id;
+      row.appendChild(customer);
+      elements.purchases.appendChild(row);
+    });
+  }
+
   async function loadAdminData() {
     setStatus("Checking administrator access and loading products…", false);
     await assertAdministrator();
-    const [categories, products] = await Promise.all([
+    const [categories, products, orders, counts] = await Promise.all([
       request("/rest/v1/categories?select=id,name,slug,is_active&order=name.asc", { method: "GET" }),
-      request("/rest/v1/products?select=id,creator_id,category_id,title,slug,description,tags,formats,license,preview_path,file_path,price_minor,currency,included_with_premium,status,updated_at&order=updated_at.desc&limit=100", { method: "GET" })
+      request("/rest/v1/rpc/admin_list_products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}"
+      }),
+      request("/rest/v1/orders?select=id,user_id,status,total_minor,currency,provider,provider_checkout_id,created_at,verified_at,order_items(products(title,slug))&order=created_at.desc&limit=100", { method: "GET" }),
+      Promise.all([
+        countRows("products?select=id").catch(() => null),
+        countRows("products?select=id&status=eq.draft").catch(() => null),
+        countRows("products?select=id&status=eq.published").catch(() => null),
+        countRows("products?select=id&status=eq.archived").catch(() => null),
+        countRows("download_events?select=id&created_at=gte." + encodeURIComponent(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())).catch(() => null),
+        countRows("orders?select=id&status=eq.paid&verified_at=not.is.null").catch(() => null)
+      ]).then(([total, draft, published, archived, downloadRequests, verifiedPurchases]) => ({
+        total, draft, published, archived, downloadRequests, verifiedPurchases
+      }))
     ]);
     elements.category.replaceChildren();
     categories.forEach((category) => {
@@ -307,6 +523,8 @@
       elements.category.appendChild(option);
     });
     renderProducts(products);
+    renderPurchases(orders);
+    renderStudioMetrics(products, counts);
     clearStatus();
   }
 
@@ -339,6 +557,7 @@
   }
 
   async function signOut() {
+    if (formDirty && !window.confirm("Sign out and discard unsaved edits? The last saved listings will remain unchanged.")) return;
     const token = accessToken;
     clearAuthenticated();
     clearStatus();
@@ -359,14 +578,21 @@
 
   async function saveProduct(event) {
     event.preventDefault();
+    const submit = elements.form.querySelector('button[type="submit"]');
+    submit.disabled = true;
     const uploadedProductPaths = [];
     const uploadedPreviewPaths = [];
     let metadataSaved = false;
     try {
+      elements.uploadProgress.hidden = true;
+      elements.uploadProgress.value = 0;
+      elements.uploadStatus.textContent = "";
       const id = elements.form.elements.id.value || crypto.randomUUID();
       if (!isUuid(id)) throw new Error("The product ID is invalid.");
       const product = readForm(id);
       const existing = productById.get(id);
+      if (product.status === "published" && existing?.status !== "published" &&
+          !window.confirm("Publish this listing? Its public metadata will become visible. Private download access will still be checked separately.")) return;
       const categoryExists = Array.from(elements.category.options).some((option) => option.value === product.category_id);
       if (!categoryExists) throw new Error("Choose a valid product category.");
 
@@ -378,7 +604,14 @@
           throw new Error("The product file format must be selected in Supported file formats.");
         }
         productPath = id + "/" + crypto.randomUUID() + "." + validated.extension;
-        await upload("product-files", productPath, productFile, validated.mime);
+        elements.uploadProgress.hidden = false;
+        elements.uploadStatus.textContent = "Uploading private product file…";
+        await upload("product-files", productPath, productFile, validated.mime, (percent) => {
+          elements.uploadProgress.value = percent;
+          elements.uploadStatus.textContent = "Uploading private product file — " + percent + "%.";
+        });
+        elements.uploadProgress.value = 100;
+        elements.uploadStatus.textContent = "Product file confirmed by Storage.";
         uploadedProductPaths.push(productPath);
       }
       if (!productPath) throw new Error("Choose a product file before saving a new listing.");
@@ -389,7 +622,15 @@
       if (previewFile) {
         const validated = await core.validateFile(previewFile, core.previewTypes, 2 * 1024 * 1024, "Preview image");
         previewPath = id + "/" + crypto.randomUUID() + "." + validated.extension;
-        await upload("product-previews", previewPath, previewFile, validated.mime);
+        elements.uploadProgress.hidden = false;
+        elements.uploadProgress.value = 0;
+        elements.uploadStatus.textContent = "Uploading private cover image…";
+        await upload("product-previews", previewPath, previewFile, validated.mime, (percent) => {
+          elements.uploadProgress.value = percent;
+          elements.uploadStatus.textContent = "Uploading private cover image — " + percent + "%.";
+        });
+        elements.uploadProgress.value = 100;
+        elements.uploadStatus.textContent = "Cover image confirmed by Storage.";
         uploadedPreviewPaths.push(previewPath);
       }
       product.preview_path = previewPath;
@@ -418,6 +659,7 @@
       }
       elements.form.reset();
       elements.form.hidden = true;
+      formDirty = false;
       await loadAdminData();
       if (!elements.status.hidden) {
         setStatus("Product was saved, but the admin list could not be refreshed. Retry the product list.", true);
@@ -429,13 +671,26 @@
         setStatus("Product listing saved.", false);
       }
     } catch (error) {
+      const cleanupResults = [];
       if (!metadataSaved) {
-        await Promise.all([
-          removeStorageObjects("product-files", uploadedProductPaths).catch(() => null),
-          removeStorageObjects("product-previews", uploadedPreviewPaths).catch(() => null)
-        ]);
+        cleanupResults.push(...await Promise.allSettled([
+          removeStorageObjects("product-files", uploadedProductPaths),
+          removeStorageObjects("product-previews", uploadedPreviewPaths)
+        ]));
       }
-      setStatus(error.message || "The product listing could not be saved.", true);
+      if (metadataSaved) {
+        setStatus("Product was saved, but the Studio could not refresh the product list. Refresh the page to verify the saved listing.", true);
+      } else if (cleanupResults.some((result) => result.status === "rejected")) {
+        setStatus((error.message || "The product listing could not be saved.") +
+          " A temporary private upload may remain in Storage and needs administrator cleanup.", true);
+      } else {
+        setStatus(error.message || "The product listing could not be saved.", true);
+      }
+      if (elements.uploadStatus.textContent.startsWith("Uploading")) {
+        elements.uploadStatus.textContent = "Upload failed. Select Save listing to retry; the selected local file remains available.";
+      }
+    } finally {
+      submit.disabled = false;
     }
   }
 
@@ -469,17 +724,40 @@
   elements.signOut.addEventListener("click", signOut);
   elements.newProduct.addEventListener("click", () => fillForm(null));
   elements.form.addEventListener("submit", saveProduct);
+  elements.form.addEventListener("input", () => { if (!elements.form.hidden) formDirty = true; });
+  elements.form.addEventListener("change", () => { if (!elements.form.hidden) formDirty = true; });
+  document.querySelectorAll("[data-studio-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      studioFilter = button.dataset.studioFilter;
+      document.querySelectorAll("[data-studio-filter]").forEach((tab) => {
+        tab.setAttribute("aria-pressed", String(tab === button));
+      });
+      renderProducts(allProducts);
+    });
+  });
   elements.previewListing.addEventListener("click", previewListing);
   elements.previewClose.addEventListener("click", () => elements.previewDialog.close());
   elements.previewDialog.addEventListener("close", () => {
     if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
     previewObjectUrl = null;
   });
-  elements.cancel.addEventListener("click", () => { elements.form.hidden = true; });
+  elements.cancel.addEventListener("click", () => {
+    if (formDirty && !window.confirm("Discard unsaved changes? The last saved listing will remain unchanged.")) return;
+    elements.form.hidden = true;
+    formDirty = false;
+  });
   elements.title.addEventListener("input", () => {
     if (!slugWasEdited) elements.slug.value = slugify(elements.title.value);
   });
   elements.slug.addEventListener("input", () => { slugWasEdited = true; });
+  function setPriceStep() {
+    const digits = new Intl.NumberFormat(navigator.language, {
+      style: "currency",
+      currency: elements.form.elements.currency.value
+    }).resolvedOptions().maximumFractionDigits;
+    elements.price.step = digits ? "0." + "0".repeat(Math.max(digits - 1, 0)) + "1" : "1";
+  }
+  elements.form.elements.currency.addEventListener("change", setPriceStep);
 
   if (!configured()) {
     elements.signIn.hidden = true;

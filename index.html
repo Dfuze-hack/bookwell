@@ -55,6 +55,8 @@
     .hero img.hero-logo {
       height: 120px;
       width: auto;
+      max-width: 100%;
+      object-fit: contain;
       margin: 0 auto 1.5rem;
       display: block;
     }
@@ -242,24 +244,196 @@
     #google_translate_element { display: none !important; }
     .skiptranslate iframe { display: none !important; }
     body { top: 0 !important; }
-    .marketplace-tools { display: grid; grid-template-columns: minmax(180px, 2fr) repeat(6, minmax(100px, 1fr)); gap: 0.75rem; margin: 1.25rem 0; }
-    .marketplace-tools input, .marketplace-tools select {
-      width: 100%; min-height: 44px; padding: 0.65rem 0.75rem; border: 1px solid var(--line);
-      border-radius: 6px; background: #fff; color: var(--text); font: inherit;
+    #library {
+      max-width: 1180px;
+      padding: clamp(2.5rem, 6vw, 5rem) clamp(1rem, 4vw, 2.5rem);
+      scroll-margin-top: 5rem;
     }
+    .library-heading { max-width: 740px; margin: 0 auto 2rem; text-align: center; }
+    .library-eyebrow {
+      display: inline-block; margin-bottom: 0.65rem; padding: 0.25rem 0.75rem; border-radius: 999px;
+      background: var(--green-light); color: var(--green-dark); font: 700 0.8rem/1.4 Arial, sans-serif;
+      letter-spacing: 0.09em; text-transform: uppercase;
+    }
+    #library h2 { margin-bottom: 0.5rem; font-size: clamp(2rem, 4vw, 2.8rem); letter-spacing: -0.025em; }
+    .library-heading > p { color: var(--muted); font-size: 1.05rem; }
+    .marketplace-tools {
+      display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+      gap: 0.9rem; margin: 1.5rem 0 0; padding: 1.25rem; border: 1px solid #dce9df;
+      border-radius: 16px; background: linear-gradient(145deg, #f5faf6, #fff 72%);
+      box-shadow: 0 12px 32px rgba(31, 77, 51, 0.07);
+    }
+    .marketplace-tools label { display: block; min-width: 0; color: #33463a; font: 600 0.84rem/1.35 Arial, sans-serif; }
+    .marketplace-tools .search-field { grid-column: span 2; }
+    .marketplace-tools .category-field { grid-column: span 2; }
+    .marketplace-tools input, .marketplace-tools select {
+      display: block; width: 100%; min-width: 0; min-height: 48px; margin-top: 0.4rem;
+      padding: 0.7rem 0.85rem; border: 1px solid #cad9ce; border-radius: 9px;
+      background-color: #fff; color: var(--text); font: 400 0.98rem/1.3 Arial, sans-serif;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+    }
+    .marketplace-tools select { text-overflow: ellipsis; }
+    .marketplace-tools input::placeholder { color: #68766c; opacity: 1; }
     .marketplace-tools input:focus, .marketplace-tools select:focus, button:focus-visible, a:focus-visible {
+      outline: 3px solid #85bd96; outline-offset: 2px; border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(46, 125, 79, 0.12);
+    }
+    .search-control { position: relative; }
+    .search-control::before {
+      content: ""; position: absolute; top: 1.08rem; left: 0.9rem; width: 0.72rem; height: 0.72rem;
+      border: 2px solid #64746a; border-radius: 50%; pointer-events: none;
+    }
+    .search-control::after {
+      content: ""; position: absolute; top: 1.85rem; left: 1.58rem; width: 0.38rem;
+      height: 2px; background: #64746a; transform: rotate(45deg); transform-origin: left center;
+      pointer-events: none;
+    }
+    .marketplace-tools .search-control input { padding-left: 2.45rem; }
+    .filter-actions { display: flex; grid-column: 4; align-items: end; }
+    .filter-actions button { min-height: 48px; width: 100%; margin: 0; cursor: pointer; }
+    .currency-hint { grid-column: 1 / -1; margin: -0.1rem 0 0; color: #5c6d61; font: 0.88rem/1.5 Arial, sans-serif; }
+    .library-results-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin: 2rem 0 0.75rem; }
+    .library-results-heading h3 { margin: 0; color: var(--green-dark); font-size: 1.2rem; }
+    .library-results-heading p { color: var(--muted); font: 0.9rem/1.4 Arial, sans-serif; }
+    #catalog-results { grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr)); gap: 1.15rem; }
+    .product-card {
+      display: flex; min-width: 0; flex-direction: column; gap: 0.65rem; min-height: 330px;
+      overflow: hidden; border: 1px solid #e0e9e2; border-top: 3px solid var(--green);
+      border-radius: 12px; padding: 1rem; background: #fff;
+      box-shadow: 0 5px 18px rgba(31, 77, 51, 0.045);
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .product-card:hover { transform: translateY(-3px); border-color: #b8d1bf; box-shadow: 0 14px 30px rgba(31, 77, 51, 0.11); }
+    .product-card h3 { color: var(--green-dark); font-size: 1.18rem; line-height: 1.35; overflow-wrap: anywhere; }
+    .product-card > p { color: var(--muted); line-height: 1.55; }
+    .product-card > p.product-description { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+    .product-card .product-preview { min-height: 145px; max-height: 180px; object-fit: cover; border: 1px solid #edf2ee; }
+    .product-cover-fallback {
+      display: grid; min-height: 145px; place-items: center; border-radius: 8px;
+      background: radial-gradient(circle at 85% 15%, #e3f0e6, transparent 38%), linear-gradient(135deg, #f0f7f1, #e6f2e9);
+      color: var(--green-dark); font: 700 0.8rem/1.5 Arial, sans-serif; letter-spacing: 0.1em;
+      text-align: center; text-transform: uppercase;
+    }
+    .product-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; padding-top: 0.35rem; }
+    .product-badge { display: inline-block; max-width: 100%; padding: 0.22rem 0.65rem; border: 1px solid #e3eee6; border-radius: 999px; background: #f2f8f3; color: var(--green-dark); font: 600 0.78rem/1.35 Arial, sans-serif; overflow-wrap: anywhere; }
+    .product-badge.price-badge { border-color: #c6dfcc; background: #eaf5ed; }
+    .product-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.25rem; }
+    .product-actions .button { margin: 0; cursor: pointer; font: 600 0.92rem/1.3 Arial, sans-serif; }
+    .catalog-status { margin: 1rem 0; padding: 1.2rem; border: 1px solid #d9e7dc; border-radius: 12px; background: #fff; color: var(--muted); }
+    #catalog-status[hidden], .catalog-status[hidden], #catalog-results[hidden], #catalog-more[hidden], #catalog-retry[hidden], #catalog-empty-actions[hidden] { display: none; }
+    .catalog-status.state-loading { border-color: transparent; background: transparent; text-align: center; }
+    .catalog-status.state-empty, .catalog-status.state-disconnected { padding: clamp(1.5rem, 4vw, 2.5rem); border-color: #dce9df; background: linear-gradient(145deg, #f3f8f4, #fff); text-align: center; }
+    .catalog-status.state-empty::before, .catalog-status.state-disconnected::before {
+      content: " "; display: block; width: 2.8rem; height: 2.8rem; margin: 0 auto 0.75rem;
+      border: 1px solid #d2e6d6; border-radius: 50%; background: #e8f4ec;
+    }
+    #catalog-empty-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem; }
+    #catalog-empty-actions .button { margin: 0; }
+    #catalog-diagnostics { margin: 0.75rem auto 0; max-width: 40rem; color: #52645a; font: 0.85rem/1.5 Arial, sans-serif; text-align: left; }
+    #catalog-diagnostics summary { cursor: pointer; }
+    #catalog-diagnostics p { margin-top: 0.4rem; }
+    #catalog-retry { display: block; margin: 0.75rem auto; }
+    #catalog-more { display: block; min-height: 48px; margin: 1.25rem auto 0; cursor: pointer; }
+    .product-dialog { width: min(92vw, 640px); max-height: 85vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem; color: var(--text); }
+    .product-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+    .product-dialog h2 { padding-right: 2.5rem; }
+    .product-dialog-close { float: right; border: 0; background: transparent; color: var(--muted); cursor: pointer; font: inherit; font-size: 1.5rem; }
+    .product-dialog-content { clear: both; }
+    .product-dialog-content > * { margin: 0.65rem 0; }
+    .product-preview { display: block; width: 100%; max-height: 180px; object-fit: contain; border-radius: 6px; background: var(--green-light); }
+    .product-preview-large { max-height: 320px; }
+    #admin-dashboard[hidden], #admin-signin[hidden], #admin-product-form[hidden] { display: none; }
+    .studio-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.8rem; margin: 1.25rem 0; }
+    .studio-stat { padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: #f8fbf8; }
+    .studio-stat strong { display: block; color: var(--green-dark); font: 700 1.65rem/1.2 Arial, sans-serif; }
+    .studio-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.1rem 0; }
+    .studio-nav button { min-height: 42px; margin: 0; cursor: pointer; font: 600 0.9rem Arial, sans-serif; }
+    .studio-nav button[aria-pressed="true"] { background: var(--green-light); color: var(--green-dark); }
+    .studio-note { color: var(--muted); font-size: 0.9rem; }
+    .studio-empty { padding: 1.2rem; border-radius: 10px; background: #f4f8f5; color: var(--muted); }
+    .upload-status { min-height: 1.5rem; color: var(--muted); font: 0.9rem Arial, sans-serif; }
+    .upload-progress { display: block; width: 100%; height: 0.8rem; margin: 0.35rem 0 0.75rem; accent-color: var(--green); }
+    .studio-product-card { display: flex; flex-direction: column; gap: 0.45rem; }
+    .studio-product-card .product-actions { margin-top: auto; padding-top: 0.5rem; }
+    #admin .account-panel { max-width: none; margin: 1rem 0; padding: clamp(1rem, 2.5vw, 1.5rem); }
+    #admin .studio-nav button:focus-visible, #admin .product-actions button:focus-visible {
       outline: 3px solid #85bd96; outline-offset: 2px;
     }
-    .product-card { display: flex; flex-direction: column; gap: 0.5rem; min-height: 220px; }
-    .product-card p { color: var(--muted); }
-    .product-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; padding-top: 0.35rem; }
-    .product-badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--green-light); color: var(--green-dark); font-size: 0.85rem; }
-    .product-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem; }
-    .product-actions .button { margin: 0; cursor: pointer; font: inherit; }
-    .catalog-status { margin: 1rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--muted); }
-    .catalog-status[hidden], #catalog-results[hidden], #catalog-more[hidden] { display: none; }
-    #catalog-retry[hidden] { display: none; }
-    #catalog-more { display: block; margin: 1.25rem auto 0; }
+    #admin input:not([type="checkbox"]), #admin select, #admin textarea {
+      display: block; width: 100%; min-height: 42px; margin: 0.35rem 0 0.9rem; padding: 0.6rem;
+      border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--text); font: inherit;
+    }
+    #admin fieldset { display: flex; flex-wrap: wrap; gap: 0.8rem; margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: 6px; }
+    #admin fieldset label { display: inline-flex; align-items: center; gap: 0.3rem; }
+    .commerce-status { margin: 1rem 0; padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 10px; background: #f5faf6; color: var(--green-dark); }
+    .commerce-status[hidden] { display: none; }
+    .purchase-row { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: 0.5rem 1rem; padding: 0.9rem 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+    .purchase-row strong { color: var(--green-dark); }
+    .purchase-row span { color: var(--muted); font: 0.9rem/1.45 Arial, sans-serif; }
+    .purchase-empty { color: var(--muted); }
+    #admin-purchases { margin-top: 1.5rem; }
+    #admin-purchases[hidden] { display: none; }
+    #account { max-width: 1180px; scroll-margin-top: 5rem; }
+    #account h2 { margin-bottom: 0.4rem; }
+    #account h3, #account h4 { color: var(--green-dark); }
+    #account-status { margin: 1rem 0; }
+    #account-status.account-error { border-color: #d5a8a0; background: #fff8f6; color: #783b31; }
+    #account-auth { display: grid; grid-template-columns: minmax(0, 560px); justify-content: center; gap: 1rem; align-items: start; }
+    #account-auth form, #account-settings { min-width: 0; }
+    #account-auth form[hidden], #account-dashboard[hidden], #account-auth[hidden], #account-verification[hidden] { display: none; }
+    #account input:not([type="checkbox"]) {
+      display: block; width: 100%; min-height: 46px; margin: 0.35rem 0 0.9rem; padding: 0.7rem 0.8rem;
+      border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); font: 1rem Arial, sans-serif;
+    }
+    #account input:focus-visible, #account button:focus-visible, #account a:focus-visible {
+      outline: 3px solid #85bd96; outline-offset: 2px;
+    }
+    #account button { cursor: pointer; }
+    .account-links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font: 0.95rem Arial, sans-serif; }
+    .account-links button, .account-subnav a { color: var(--green-dark); }
+    #account-verification { margin-top: 1rem; }
+    #account-dashboard { display: grid; gap: 1.25rem; }
+    .account-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .account-stat { padding: 1.1rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .account-stat strong { display: block; color: var(--green-dark); font: 700 1.75rem/1.2 Arial, sans-serif; }
+    .account-subnav { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+    .account-subnav a { padding: 0.55rem 0.85rem; border: 1px solid var(--line); border-radius: 999px; background: #fff; text-decoration: none; }
+    .account-subnav a:hover { background: var(--green-light); }
+    .account-panel { min-width: 0; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    .account-panel > h3 { margin-bottom: 0.8rem; }
+    .account-resource-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr)); gap: 1rem; }
+    .account-resource-card { min-width: 0; display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem; border: 1px solid #e0e9e2; border-radius: 12px; background: #fff; }
+    .account-resource-card h4 { overflow-wrap: anywhere; }
+    .account-resource-card > p { color: var(--muted); }
+    .account-resource-card .product-preview { min-height: 120px; }
+    .account-empty { padding: 1.25rem; border-radius: 10px; background: #f4f8f5; color: var(--muted); }
+    .account-muted { color: var(--muted); font-size: 0.88rem; }
+    #account-recent { display: grid; gap: 0.5rem; }
+    #account-recent a { color: var(--green-dark); overflow-wrap: anywhere; }
+    #account-settings { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: end; }
+    #account-settings label { flex: 1 1 18rem; }
+    #account-settings input { margin-bottom: 0 !important; }
+    #account-signout { margin: 0; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 900px) {
+      .marketplace-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .marketplace-tools .search-field { grid-column: 1 / -1; }
+      .marketplace-tools .category-field { grid-column: 1 / -1; }
+      .filter-actions { grid-column: auto; }
+    }
+    @media (max-width: 520px) {
+      .marketplace-tools { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; padding: 1rem; }
+      .marketplace-tools .search-field, .marketplace-tools .category-field, .currency-hint, .filter-actions { grid-column: auto; }
+      .library-results-heading { align-items: flex-start; flex-direction: column; gap: 0.2rem; }
+      .product-card { min-height: 0; }
+      #catalog-results { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 620px) {
+      #account-auth, .account-overview { grid-template-columns: minmax(0, 1fr); }
+      .account-subnav { gap: 0.45rem; }
+      .account-subnav a { flex: 1 1 auto; text-align: center; }
+      .purchase-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    }
     .product-dialog { width: min(92vw, 640px); max-height: 85vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem; color: var(--text); }
     .product-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
     .product-dialog h2 { padding-right: 2.5rem; }
@@ -321,7 +495,8 @@
       <li><a href="#library">Library</a></li>
       <li><a href="#volunteer">Volunteer</a></li>
       <li><a href="#contact">Contact</a></li>
-      <li><a href="#admin">Admin</a></li>
+      <li><a href="#admin">Creator Studio</a></li>
+      <li><a href="#account" id="account-nav">Account</a></li>
       <li><a href="#" id="lang-btn" aria-haspopup="dialog" aria-controls="lang-modal" aria-expanded="false">Language</a></li>
     </ul>
   </nav>
@@ -373,47 +548,64 @@
   </section>
 
   <section id="library">
-    <h2>The Library</h2>
-    <p>The library is organized as Class, then Subject, then Language.</p>
-    <p>Browse free, openly licensed learning resources. Listings are shown only when they have been published in BookWell's catalog.</p>
+    <div class="library-heading">
+      <span class="library-eyebrow">A world of learning</span>
+      <h2>The Library</h2>
+      <p>Discover thoughtful learning resources for curious minds everywhere. Explore by subject, format, and price, then find the right resource for your next step.</p>
+    </div>
     <form class="marketplace-tools" id="catalog-filters" role="search">
-      <label>
-        <span class="visually-hidden">Search products</span>
-        <input type="search" id="catalog-search" name="q" placeholder="Search resources..." autocomplete="off">
+      <label class="search-field">
+        Search resources
+        <span class="search-control">
+          <input type="search" id="catalog-search" name="q" placeholder="Try a subject, topic, or keyword" autocomplete="off">
+        </span>
       </label>
-      <label>
-        <span class="visually-hidden">Filter by category</span>
+      <label class="category-field">
+        Subject
         <select id="catalog-category" name="category"><option value="">All categories</option></select>
       </label>
       <label>
-        <span class="visually-hidden">Filter by price</span>
+        Price
         <select id="catalog-price" name="price">
           <option value="">Any price</option><option value="free">Free</option><option value="paid">Paid</option>
         </select>
       </label>
       <label>
-        <span class="visually-hidden">Filter by file format</span>
+        Format
         <select id="catalog-format" name="format">
           <option value="">Any format</option><option value="PDF">PDF</option><option value="ZIP">ZIP</option><option value="DOCX">DOCX</option><option value="PPTX">PPTX</option><option value="XLSX">XLSX</option>
         </select>
       </label>
       <label>
-        <span class="visually-hidden">Minimum price in INR</span>
-        <input type="number" id="catalog-min-price" name="minPrice" min="0" max="20000000" step="0.01" inputmode="decimal" placeholder="Min ₹">
-      </label>
-      <label>
-        <span class="visually-hidden">Maximum price in INR</span>
-        <input type="number" id="catalog-max-price" name="maxPrice" min="0" max="20000000" step="0.01" inputmode="decimal" placeholder="Max ₹">
-      </label>
-      <label>
-        <span class="visually-hidden">Sort products</span>
-        <select id="catalog-sort" name="sort">
-          <option value="newest">Newest</option><option value="title">Title</option><option value="price_asc">Currency, then price ↑</option><option value="price_desc">Currency, then price ↓</option>
+        Price currency
+        <select id="catalog-currency" name="currency">
+          <option value="">Choose currency</option><option value="USD">USD · US Dollar</option><option value="INR">INR · Indian Rupee</option><option value="EUR">EUR · Euro</option><option value="GBP">GBP · Pound Sterling</option><option value="AUD">AUD · Australian Dollar</option><option value="JPY">JPY · Japanese Yen</option><option value="KWD">KWD · Kuwaiti Dinar</option>
         </select>
       </label>
+      <label>
+        Minimum price
+        <input type="number" id="catalog-min-price" name="minPrice" min="0" max="20000000" step="any" inputmode="decimal" placeholder="No minimum">
+      </label>
+      <label>
+        Maximum price
+        <input type="number" id="catalog-max-price" name="maxPrice" min="0" max="20000000" step="any" inputmode="decimal" placeholder="No maximum">
+      </label>
+      <label>
+        Sort results
+        <select id="catalog-sort" name="sort">
+          <option value="newest">Recently updated</option><option value="title">Title A–Z</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option>
+        </select>
+      </label>
+      <div class="filter-actions"><button id="catalog-clear" class="button secondary" type="button">Clear filters</button></div>
+      <p class="currency-hint">Choose a currency when setting a price range. Ranges compare only products in that currency. Price sorting groups by currency. Prices are shown as listed; BookWell does not convert currencies.</p>
     </form>
-    <p>Price range fields use INR. Products display their listed currency; price sorting groups currencies because different currencies are not directly comparable.</p>
-    <p id="catalog-status" class="catalog-status" role="status" aria-live="polite">Loading the published catalog…</p>
+    <div class="library-results-heading"><h3>Explore resources</h3><p>Only published resources appear here.</p></div>
+    <p id="catalog-status" class="catalog-status state-loading" role="status" aria-live="polite">Loading resources…</p>
+    <div id="catalog-empty-actions" hidden>
+      <a class="button secondary" href="#volunteer">Explore ways to help</a>
+      <a class="button secondary" href="#about">Learn about BookWell</a>
+    </div>
+    <details id="catalog-diagnostics" hidden><summary>Developer diagnostics</summary><p id="catalog-diagnostic-text"></p></details>
     <button id="catalog-retry" class="button secondary" type="button" hidden>Retry catalog</button>
     <div id="catalog-results" class="grid" aria-live="polite" hidden></div>
     <button id="catalog-more" class="button secondary" type="button" hidden>Load more</button>
@@ -421,6 +613,98 @@
       <button class="product-dialog-close" type="button" aria-label="Close product details">×</button>
       <div id="product-dialog-content" class="product-dialog-content"></div>
     </dialog>
+  </section>
+
+  <section id="account" class="highlight">
+    <h2>Your BookWell account</h2>
+    <p>Sign in to save resources and keep your authorized learning materials together. Anyone can browse the public Library without an account.</p>
+    <p id="account-status" class="catalog-status" role="status" aria-live="polite">Accounts require a configured Supabase project.</p>
+    <div id="account-auth">
+      <form id="account-signin" class="card">
+        <h3>Sign in</h3>
+        <label for="account-signin-email">Email</label>
+        <input id="account-signin-email" name="email" type="email" autocomplete="username" required>
+        <label for="account-signin-password">Password</label>
+        <input id="account-signin-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="button" type="submit">Sign in</button>
+        <div class="account-links">
+          <button id="account-show-signup" type="button">Create an account</button>
+          <button id="account-show-forgot" type="button">Forgot password?</button>
+        </div>
+      </form>
+      <form id="account-signup" class="card" hidden>
+        <h3>Create your free account</h3>
+        <label for="account-signup-email">Email</label>
+        <input id="account-signup-email" name="email" type="email" autocomplete="email" required>
+        <label for="account-signup-password">Password</label>
+        <input id="account-signup-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+        <label for="account-signup-confirm">Confirm password</label>
+        <input id="account-signup-confirm" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+        <button class="button" type="submit">Create account</button>
+        <div class="account-links"><button type="button" data-account-show-signin>Back to sign in</button></div>
+      </form>
+      <form id="account-forgot" class="card" hidden>
+        <h3>Reset your password</h3>
+        <p>We’ll send a secure password-reset link if an account exists for your email.</p>
+        <label for="account-forgot-email">Email</label>
+        <input id="account-forgot-email" name="email" type="email" autocomplete="email" required>
+        <button class="button" type="submit">Send reset link</button>
+        <div class="account-links"><button type="button" data-account-show-signin>Back to sign in</button></div>
+      </form>
+      <form id="account-reset" class="card" hidden>
+        <h3>Choose a new password</h3>
+        <label for="account-reset-password">New password</label>
+        <input id="account-reset-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+        <label for="account-reset-confirm">Confirm new password</label>
+        <input id="account-reset-confirm" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+        <button class="button" type="submit">Update password</button>
+      </form>
+    </div>
+    <div id="account-verification" class="account-panel" hidden>
+      <p>Check your email for a verification link. If it has expired, you can request another.</p>
+      <button id="account-verification-resend" class="button secondary" type="button">Resend verification email</button>
+    </div>
+    <div id="account-dashboard" hidden>
+      <div class="product-actions">
+        <h3 id="account-welcome">Welcome to your BookWell account</h3>
+        <button id="account-signout" class="button secondary" type="button">Sign out</button>
+      </div>
+      <div class="account-overview">
+        <div class="account-stat"><strong id="account-library-count">0</strong><span>resources currently available to you</span></div>
+        <div class="account-stat"><strong id="account-saved-count">0</strong><span>saved resources</span></div>
+      </div>
+      <nav class="account-subnav" aria-label="Account sections">
+        <a href="#account-library">My Library</a><a href="#account-saved">Saved products</a><a href="#account-settings-panel">Settings</a>
+      </nav>
+      <section id="account-library" class="account-panel">
+        <h3>My Library</h3>
+        <p class="account-muted">Only published free resources or resources with an authorized entitlement appear here. Private files are checked again when you download.</p>
+        <div id="account-library-products" class="account-resource-grid"></div>
+      </section>
+      <section id="account-saved" class="account-panel">
+        <h3>Saved products</h3>
+        <div id="account-saved-products" class="account-resource-grid"></div>
+      </section>
+      <section class="account-panel">
+        <h3>Recent download links</h3>
+        <p class="account-muted">This list records secure download links issued to your account; it does not confirm that a file transfer completed.</p>
+        <div id="account-recent"></div>
+      </section>
+      <section id="account-purchase-panel" class="account-panel">
+        <h3>Purchase history</h3>
+        <p id="account-purchase-status" class="commerce-status" role="status" aria-live="polite" hidden></p>
+        <div id="account-purchases"></div>
+      </section>
+      <section id="account-settings-panel" class="account-panel">
+        <h3>Account settings</h3>
+        <p>Email: <strong id="account-email-label"></strong></p>
+        <form id="account-profile">
+          <label for="account-display-name">Display name (optional)</label>
+          <input id="account-display-name" name="display_name" type="text" maxlength="80" autocomplete="nickname">
+          <button class="button" type="submit">Save profile</button>
+        </form>
+      </section>
+    </div>
   </section>
 
   <section id="volunteer" class="highlight">
@@ -451,8 +735,8 @@
   </section>
 
   <section id="admin">
-    <h2>BookWell Administration</h2>
-    <p>Authorized administrators can manage product listings. Product access is enforced by Supabase Auth and database policies.</p>
+    <h2>Creator Studio</h2>
+    <p>Manage product listings, files, previews, and publication status. This Studio is currently restricted to authorized administrators because creator upload and publishing permissions are not enabled in Storage/database policies.</p>
     <form id="admin-signin" class="card">
       <h3>Administrator sign in</h3>
       <label for="admin-email">Email</label>
@@ -466,8 +750,30 @@
       <div class="product-actions">
         <h3 id="admin-account"></h3>
         <button id="admin-signout" class="button secondary" type="button">Sign out</button>
-        <button id="admin-new-product" class="button" type="button">New product</button>
+        <button id="admin-new-product" class="button" type="button">Create product</button>
       </div>
+      <h3>Overview</h3>
+      <div class="studio-overview" aria-label="Creator Studio overview">
+        <div class="studio-stat"><strong id="studio-total-products">—</strong><span>Total products</span></div>
+        <div class="studio-stat"><strong id="studio-draft-products">—</strong><span>Drafts</span></div>
+        <div class="studio-stat"><strong id="studio-published-products">—</strong><span>Published listings</span></div>
+        <div class="studio-stat"><strong id="studio-archived-products">—</strong><span>Archived products</span></div>
+      </div>
+      <nav class="studio-nav" aria-label="Creator Studio views">
+        <button type="button" class="button secondary" data-studio-filter="mine" aria-pressed="true">My Products</button>
+        <button type="button" class="button secondary" data-studio-filter="all" aria-pressed="false">All Products</button>
+        <button type="button" class="button secondary" data-studio-filter="draft" aria-pressed="false">Drafts</button>
+        <button type="button" class="button secondary" data-studio-filter="published" aria-pressed="false">Published Listings</button>
+        <button type="button" class="button secondary" data-studio-filter="archived" aria-pressed="false">Archived Products</button>
+      </nav>
+      <section id="studio-analytics" class="account-panel">
+        <h3>Basic analytics</h3>
+        <div class="studio-overview">
+          <div class="studio-stat"><strong id="studio-download-requests">—</strong><span>Download links issued · last 30 days</span></div>
+          <div class="studio-stat"><strong id="studio-verified-purchases">—</strong><span>Verified purchases</span></div>
+        </div>
+        <p id="studio-analytics-note" class="studio-note">Analytics use recorded database events only. Link issuance is not a confirmed download; page views and revenue are not tracked here.</p>
+      </section>
       <form id="admin-product-form" class="card" hidden>
         <h3 id="admin-form-title">Product listing</h3>
         <input type="hidden" name="id">
@@ -477,6 +783,8 @@
         <input id="admin-product-slug" name="slug" type="text" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="160" required>
         <label for="admin-product-description">Description</label>
         <textarea id="admin-product-description" name="description" minlength="10" maxlength="10000" rows="5" required></textarea>
+        <label for="admin-product-language">Language</label>
+        <input id="admin-product-language" name="language" type="text" maxlength="80" placeholder="For example, English" required>
         <label for="admin-product-category">Category</label>
         <select id="admin-product-category" name="category_id" required></select>
         <label for="admin-product-license">Product licence</label>
@@ -491,8 +799,12 @@
           <label><input name="formats" type="checkbox" value="PPTX"> PPTX</label>
           <label><input name="formats" type="checkbox" value="XLSX"> XLSX</label>
         </fieldset>
-        <label for="admin-product-price">Price in INR (0 means free)</label>
+        <label for="admin-product-price">Price amount (0 means free)</label>
         <input id="admin-product-price" name="price" type="number" min="0" max="20000000" step="0.01" inputmode="decimal" required>
+        <label for="admin-product-currency">Price currency</label>
+        <select id="admin-product-currency" name="currency" required>
+          <option value="USD">USD · US Dollar</option><option value="INR">INR · Indian Rupee</option><option value="EUR">EUR · Euro</option><option value="GBP">GBP · Pound Sterling</option><option value="AUD">AUD · Australian Dollar</option><option value="JPY">JPY · Japanese Yen</option><option value="KWD">KWD · Kuwaiti Dinar</option>
+        </select>
         <label for="admin-product-status">Listing status</label>
         <select id="admin-product-status" name="status" required>
           <option value="draft">Draft (unpublished)</option>
@@ -503,16 +815,30 @@
         </select>
         <label for="admin-product-file">Product file (PDF, ZIP, DOCX, PPTX or XLSX; max 50 MB)</label>
         <input id="admin-product-file" name="product_file" type="file" accept=".pdf,.zip,.docx,.pptx,.xlsx,application/pdf,application/zip">
-        <label for="admin-product-preview">Preview image (PNG, JPEG or WebP; max 2 MB)</label>
+        <h4>Upload management</h4>
+        <label for="admin-product-preview">Cover image (PNG, JPEG or WebP; max 2 MB)</label>
         <input id="admin-product-preview" name="preview_file" type="file" accept="image/png,image/jpeg,image/webp">
-        <p>Paid products remain hidden from the public catalogue until a real, verified payment flow is implemented. Uploads are restricted to administrators and private product storage.</p>
+        <progress id="studio-upload-progress" class="upload-progress" max="100" value="0" hidden aria-label="File upload progress"></progress>
+        <p id="studio-upload-status" class="upload-status" role="status" aria-live="polite"></p>
+        <p class="studio-note">Product type uses the selected file format. Cover images reuse the private preview bucket. Language is stored as listing metadata. Uploads are private; progress reflects bytes sent and success is shown only after Storage confirms receipt.</p>
+        <p>Checkout is not enabled. Publishing a paid listing never grants download access; private files remain protected by server-side authorization.</p>
+        <h4>Product preview</h4>
         <div class="product-actions">
           <button id="admin-preview-listing" class="button secondary" type="button">Preview listing</button>
           <button class="button" type="submit">Save listing</button>
           <button id="admin-cancel-edit" class="button secondary" type="button">Cancel</button>
         </div>
       </form>
+      <section class="account-panel">
+        <h3>My Products</h3>
+        <p class="account-muted">My Products shows listings owned by this administrator; All Products retains the full administrator catalog.</p>
       <div id="admin-products" class="grid"></div>
+      </section>
+      <section id="admin-purchases" class="account-panel">
+        <h3>Purchases</h3>
+        <p class="account-muted">Verified payment records only. This view does not contain payment-card details.</p>
+        <div id="admin-purchase-list"></div>
+      </section>
     </div>
     <dialog id="admin-preview-dialog" class="product-dialog" aria-labelledby="admin-preview-title">
       <button id="admin-preview-close" class="product-dialog-close" type="button" aria-label="Close listing preview">×</button>
@@ -527,8 +853,13 @@
   </footer>
 
   <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+  <script src="account-client.js"></script>
+  <script src="account-core.js"></script>
   <script src="marketplace-core.js"></script>
+  <script src="commerce-core.js"></script>
   <script src="admin-core.js"></script>
+  <script src="account.js" defer></script>
   <script src="marketplace.js" defer></script>
   <script src="admin.js" defer></script>
   <script type="text/javascript">

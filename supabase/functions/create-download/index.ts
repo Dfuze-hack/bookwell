@@ -60,11 +60,22 @@ Deno.serve(async (request: Request) => {
     global: authorization ? { headers: { Authorization: authorization } } : undefined,
     auth: { persistSession: false, autoRefreshToken: false }
   });
-  const { data: filePath, error: accessError } = await supabase.rpc(
-    "get_authorized_download_path",
+  const { data: canDownload, error: permissionError } = await supabase.rpc(
+    "can_download_product",
     { target_product: productId }
   );
-  if (accessError || typeof filePath !== "string" || filePath.length === 0) {
+  if (permissionError || canDownload !== true) {
+    return response({ error: "This resource is unavailable or your account is not authorized to download it." }, 403, origin);
+  }
+  const { data: userResult } = await supabase.auth.getUser();
+  const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  const { data: filePath, error: pathError } = await serviceClient.rpc(
+    "get_authorized_download_path",
+    { target_product: productId, target_user: userResult.user?.id ?? null }
+  );
+  if (pathError || typeof filePath !== "string" || filePath.length === 0) {
     return response({ error: "This resource is unavailable or your account is not authorized to download it." }, 403, origin);
   }
   const extension = filePath.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
@@ -73,17 +84,13 @@ Deno.serve(async (request: Request) => {
     return response({ error: "The download could not be prepared. Please try again." }, 503, origin);
   }
 
-  const { data, error } = await supabase.storage
+  const { data, error } = await serviceClient.storage
     .from("product-files")
     .createSignedUrl(filePath, 60);
   if (error || !data?.signedUrl) {
     console.error("Storage could not issue an authorized download.");
     return response({ error: "The download could not be prepared. Please try again." }, 503, origin);
   }
-  const { data: userResult } = await supabase.auth.getUser();
-  const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
   const { error: auditError } = await serviceClient.from("download_events").insert({
     user_id: userResult.user?.id || null,
     product_id: productId
