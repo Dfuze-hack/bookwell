@@ -1,0 +1,2 @@
+[functions.create-download]
+verify_jwt = true

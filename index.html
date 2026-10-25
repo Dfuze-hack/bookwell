@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="BookWell provides free, legal books and learning resources for students everywhere, organized by class, subject, and language.">
+  <meta name="description" content="Discover free, openly licensed learning resources from BookWell, organized by category, subject, and language.">
+  <link rel="canonical" href="https://www.bookwell.dpdns.org/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="BookWell | Free Books and Learning Resources">
+  <meta property="og:description" content="Discover free, openly licensed learning resources for students worldwide.">
+  <meta property="og:url" content="https://www.bookwell.dpdns.org/">
+  <meta property="og:image" content="https://www.bookwell.dpdns.org/bookwell-logo-full.png">
   <title>BookWell | Free Books and Learning Resources</title>
   <link rel="icon" type="image/png" href="bookwell_icon.png">
   <link rel="apple-touch-icon" href="bookwell_icon.png">
@@ -147,6 +153,8 @@
       cursor: pointer;
       color: var(--muted);
       line-height: 1;
+      border: 0;
+      background: transparent;
     }
     .close-btn:hover { color: var(--text); }
     #lang-search {
@@ -167,13 +175,22 @@
       padding-right: 0.5rem;
     }
     #lang-list li {
-      padding: 0.6rem 1rem;
-      cursor: pointer;
       border-radius: 6px;
-      font-size: 0.95rem;
       border: 1px solid transparent;
     }
-    #lang-list li:hover {
+    #lang-list button {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      font-size: 0.95rem;
+    }
+    #lang-list button:hover, #lang-list button:focus-visible {
       background-color: var(--green-light);
       border-color: var(--line);
       color: var(--green-dark);
@@ -225,6 +242,42 @@
     #google_translate_element { display: none !important; }
     .skiptranslate iframe { display: none !important; }
     body { top: 0 !important; }
+    .marketplace-tools { display: grid; grid-template-columns: minmax(180px, 2fr) repeat(6, minmax(100px, 1fr)); gap: 0.75rem; margin: 1.25rem 0; }
+    .marketplace-tools input, .marketplace-tools select {
+      width: 100%; min-height: 44px; padding: 0.65rem 0.75rem; border: 1px solid var(--line);
+      border-radius: 6px; background: #fff; color: var(--text); font: inherit;
+    }
+    .marketplace-tools input:focus, .marketplace-tools select:focus, button:focus-visible, a:focus-visible {
+      outline: 3px solid #85bd96; outline-offset: 2px;
+    }
+    .product-card { display: flex; flex-direction: column; gap: 0.5rem; min-height: 220px; }
+    .product-card p { color: var(--muted); }
+    .product-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; padding-top: 0.35rem; }
+    .product-badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--green-light); color: var(--green-dark); font-size: 0.85rem; }
+    .product-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem; }
+    .product-actions .button { margin: 0; cursor: pointer; font: inherit; }
+    .catalog-status { margin: 1rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--muted); }
+    .catalog-status[hidden], #catalog-results[hidden], #catalog-more[hidden] { display: none; }
+    #catalog-retry[hidden] { display: none; }
+    #catalog-more { display: block; margin: 1.25rem auto 0; }
+    .product-dialog { width: min(92vw, 640px); max-height: 85vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem; color: var(--text); }
+    .product-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+    .product-dialog h2 { padding-right: 2.5rem; }
+    .product-dialog-close { float: right; border: 0; background: transparent; color: var(--muted); cursor: pointer; font: inherit; font-size: 1.5rem; }
+    .product-dialog-content { clear: both; }
+    .product-dialog-content > * { margin: 0.65rem 0; }
+    .product-preview { display: block; width: 100%; max-height: 180px; object-fit: contain; border-radius: 6px; background: var(--green-light); }
+    .product-preview-large { max-height: 320px; }
+    #admin-dashboard[hidden], #admin-signin[hidden], #admin-product-form[hidden] { display: none; }
+    #admin input:not([type="checkbox"]), #admin select, #admin textarea {
+      display: block; width: 100%; min-height: 42px; margin: 0.35rem 0 0.9rem; padding: 0.6rem;
+      border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--text); font: inherit;
+    }
+    #admin fieldset { display: flex; flex-wrap: wrap; gap: 0.8rem; margin: 0.75rem 0; padding: 0.75rem; border: 1px solid var(--line); border-radius: 6px; }
+    #admin fieldset label { display: inline-flex; align-items: center; gap: 0.3rem; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 700px) { .marketplace-tools { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 420px) { .marketplace-tools { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -268,7 +321,8 @@
       <li><a href="#library">Library</a></li>
       <li><a href="#volunteer">Volunteer</a></li>
       <li><a href="#contact">Contact</a></li>
-      <li><a href="#" id="lang-btn">Language</a></li>
+      <li><a href="#admin">Admin</a></li>
+      <li><a href="#" id="lang-btn" aria-haspopup="dialog" aria-controls="lang-modal" aria-expanded="false">Language</a></li>
     </ul>
   </nav>
 
@@ -276,14 +330,14 @@
   <div id="google_translate_element"></div>
 
   <!-- Custom Language Modal -->
-  <div id="lang-modal" class="modal">
+  <div id="lang-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lang-title" aria-hidden="true">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Select Language</h2>
-        <span class="close-btn">&times;</span>
+        <h2 id="lang-title">Select Language</h2>
+        <button class="close-btn" type="button" aria-label="Close language selector">&times;</button>
       </div>
-      <input type="text" id="lang-search" placeholder="Search languages...">
-      <ul id="lang-list"></ul>
+      <input type="text" id="lang-search" placeholder="Search languages..." aria-label="Search languages">
+      <ul id="lang-list" role="listbox" aria-label="Available languages"></ul>
     </div>
   </div>
 
@@ -321,9 +375,52 @@
   <section id="library">
     <h2>The Library</h2>
     <p>The library is organized as Class, then Subject, then Language.</p>
-    <div class="placeholder" style="margin-top:1rem;">
-      <p><strong>Coming soon.</strong> We're gathering our first resources. Check back soon or follow us for updates.</p>
-    </div>
+    <p>Browse free, openly licensed learning resources. Listings are shown only when they have been published in BookWell's catalog.</p>
+    <form class="marketplace-tools" id="catalog-filters" role="search">
+      <label>
+        <span class="visually-hidden">Search products</span>
+        <input type="search" id="catalog-search" name="q" placeholder="Search resources..." autocomplete="off">
+      </label>
+      <label>
+        <span class="visually-hidden">Filter by category</span>
+        <select id="catalog-category" name="category"><option value="">All categories</option></select>
+      </label>
+      <label>
+        <span class="visually-hidden">Filter by price</span>
+        <select id="catalog-price" name="price">
+          <option value="">Any price</option><option value="free">Free</option><option value="paid">Paid</option>
+        </select>
+      </label>
+      <label>
+        <span class="visually-hidden">Filter by file format</span>
+        <select id="catalog-format" name="format">
+          <option value="">Any format</option><option value="PDF">PDF</option><option value="ZIP">ZIP</option><option value="DOCX">DOCX</option><option value="PPTX">PPTX</option><option value="XLSX">XLSX</option>
+        </select>
+      </label>
+      <label>
+        <span class="visually-hidden">Minimum price in INR</span>
+        <input type="number" id="catalog-min-price" name="minPrice" min="0" max="20000000" step="0.01" inputmode="decimal" placeholder="Min ₹">
+      </label>
+      <label>
+        <span class="visually-hidden">Maximum price in INR</span>
+        <input type="number" id="catalog-max-price" name="maxPrice" min="0" max="20000000" step="0.01" inputmode="decimal" placeholder="Max ₹">
+      </label>
+      <label>
+        <span class="visually-hidden">Sort products</span>
+        <select id="catalog-sort" name="sort">
+          <option value="newest">Newest</option><option value="title">Title</option><option value="price_asc">Currency, then price ↑</option><option value="price_desc">Currency, then price ↓</option>
+        </select>
+      </label>
+    </form>
+    <p>Price range fields use INR. Products display their listed currency; price sorting groups currencies because different currencies are not directly comparable.</p>
+    <p id="catalog-status" class="catalog-status" role="status" aria-live="polite">Loading the published catalog…</p>
+    <button id="catalog-retry" class="button secondary" type="button" hidden>Retry catalog</button>
+    <div id="catalog-results" class="grid" aria-live="polite" hidden></div>
+    <button id="catalog-more" class="button secondary" type="button" hidden>Load more</button>
+    <dialog id="product-dialog" class="product-dialog" aria-labelledby="product-dialog-title">
+      <button class="product-dialog-close" type="button" aria-label="Close product details">×</button>
+      <div id="product-dialog-content" class="product-dialog-content"></div>
+    </dialog>
   </section>
 
   <section id="volunteer" class="highlight">
@@ -341,6 +438,10 @@
   <section id="about">
     <h2>About BookWell</h2>
     <p>BookWell is a student-led, volunteer-run project. Every volunteer works remotely, and an adult coordinator reviews all content and safeguarding decisions. We're growing step by step, and we welcome feedback from teachers, students, and families.</p>
+    <h3 id="funding" style="margin-top:1rem;">Funding</h3>
+    <p>BookWell is volunteer-run. We do not claim grants, sponsors, or financial support that have not been verified.</p>
+    <h3 id="locations" style="margin-top:1rem;">Locations</h3>
+    <p>BookWell operates online, with volunteers contributing remotely.</p>
   </section>
 
   <section id="contact" class="highlight">
@@ -349,12 +450,87 @@
     <p style="margin-top:0.75rem;"><strong>Email:</strong> <a href="mailto:support@bookwell.dpdns.org">support@bookwell.dpdns.org</a></p>
   </section>
 
+  <section id="admin">
+    <h2>BookWell Administration</h2>
+    <p>Authorized administrators can manage product listings. Product access is enforced by Supabase Auth and database policies.</p>
+    <form id="admin-signin" class="card">
+      <h3>Administrator sign in</h3>
+      <label for="admin-email">Email</label>
+      <input id="admin-email" name="email" type="email" autocomplete="username" required>
+      <label for="admin-password">Password</label>
+      <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+      <button class="button" type="submit">Sign in</button>
+    </form>
+    <p id="admin-status" class="catalog-status" role="status" aria-live="polite">Admin tools require a configured Supabase project. Administrator accounts must be provisioned separately; public sign-up is disabled.</p>
+    <div id="admin-dashboard" hidden>
+      <div class="product-actions">
+        <h3 id="admin-account"></h3>
+        <button id="admin-signout" class="button secondary" type="button">Sign out</button>
+        <button id="admin-new-product" class="button" type="button">New product</button>
+      </div>
+      <form id="admin-product-form" class="card" hidden>
+        <h3 id="admin-form-title">Product listing</h3>
+        <input type="hidden" name="id">
+        <label for="admin-product-title">Product title</label>
+        <input id="admin-product-title" name="title" type="text" maxlength="160" required>
+        <label for="admin-product-slug">Product slug</label>
+        <input id="admin-product-slug" name="slug" type="text" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="160" required>
+        <label for="admin-product-description">Description</label>
+        <textarea id="admin-product-description" name="description" minlength="10" maxlength="10000" rows="5" required></textarea>
+        <label for="admin-product-category">Category</label>
+        <select id="admin-product-category" name="category_id" required></select>
+        <label for="admin-product-license">Product licence</label>
+        <input id="admin-product-license" name="license" type="text" maxlength="120" required>
+        <label for="admin-product-tags">Tags (comma-separated)</label>
+        <input id="admin-product-tags" name="tags" type="text" maxlength="500">
+        <fieldset>
+          <legend>Supported file formats</legend>
+          <label><input name="formats" type="checkbox" value="PDF"> PDF</label>
+          <label><input name="formats" type="checkbox" value="ZIP"> ZIP</label>
+          <label><input name="formats" type="checkbox" value="DOCX"> DOCX</label>
+          <label><input name="formats" type="checkbox" value="PPTX"> PPTX</label>
+          <label><input name="formats" type="checkbox" value="XLSX"> XLSX</label>
+        </fieldset>
+        <label for="admin-product-price">Price in INR (0 means free)</label>
+        <input id="admin-product-price" name="price" type="number" min="0" max="20000000" step="0.01" inputmode="decimal" required>
+        <label for="admin-product-status">Listing status</label>
+        <select id="admin-product-status" name="status" required>
+          <option value="draft">Draft (unpublished)</option>
+          <option value="pending">Pending approval</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived (unpublished)</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <label for="admin-product-file">Product file (PDF, ZIP, DOCX, PPTX or XLSX; max 50 MB)</label>
+        <input id="admin-product-file" name="product_file" type="file" accept=".pdf,.zip,.docx,.pptx,.xlsx,application/pdf,application/zip">
+        <label for="admin-product-preview">Preview image (PNG, JPEG or WebP; max 2 MB)</label>
+        <input id="admin-product-preview" name="preview_file" type="file" accept="image/png,image/jpeg,image/webp">
+        <p>Paid products remain hidden from the public catalogue until a real, verified payment flow is implemented. Uploads are restricted to administrators and private product storage.</p>
+        <div class="product-actions">
+          <button id="admin-preview-listing" class="button secondary" type="button">Preview listing</button>
+          <button class="button" type="submit">Save listing</button>
+          <button id="admin-cancel-edit" class="button secondary" type="button">Cancel</button>
+        </div>
+      </form>
+      <div id="admin-products" class="grid"></div>
+    </div>
+    <dialog id="admin-preview-dialog" class="product-dialog" aria-labelledby="admin-preview-title">
+      <button id="admin-preview-close" class="product-dialog-close" type="button" aria-label="Close listing preview">×</button>
+      <div id="admin-preview-content" class="product-dialog-content"></div>
+    </dialog>
+  </section>
+
   <footer>
     <img src="bookwell-logo-full.png" alt="BookWell logo">
     <p>&copy; 2026 BookWell. Free for everyone.</p>
     <p><a href="#top">Back to top</a></p>
   </footer>
 
+  <script src="supabase-config.js"></script>
+  <script src="marketplace-core.js"></script>
+  <script src="admin-core.js"></script>
+  <script src="marketplace.js" defer></script>
+  <script src="admin.js" defer></script>
   <script type="text/javascript">
     function googleTranslateElementInit() {
       new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
@@ -369,20 +545,31 @@
     const closeBtn = document.querySelector('.close-btn');
     const langSearch = document.getElementById('lang-search');
     const langList = document.getElementById('lang-list');
+    let previousFocus = null;
+
+    function closeLanguageModal() {
+      langModal.style.display = 'none';
+      langModal.setAttribute('aria-hidden', 'true');
+      langBtn.setAttribute('aria-expanded', 'false');
+      if (previousFocus) previousFocus.focus();
+    }
 
     function renderLanguages(filter = '') {
       langList.innerHTML = '';
       availableLanguages.filter(l => l.name.toLowerCase().includes(filter.toLowerCase())).forEach(lang => {
         const li = document.createElement('li');
-        li.textContent = lang.name;
-        li.onclick = () => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.textContent = lang.name;
+        option.onclick = () => {
           const select = document.querySelector('.goog-te-combo');
           if (select) {
             select.value = lang.code;
             select.dispatchEvent(new Event('change'));
           }
-          langModal.style.display = 'none';
+          closeLanguageModal();
         };
+        li.appendChild(option);
         langList.appendChild(li);
       });
     }
@@ -404,14 +591,35 @@
 
     langBtn.onclick = (e) => {
       e.preventDefault();
+      previousFocus = document.activeElement;
       langModal.style.display = 'flex';
+      langModal.setAttribute('aria-hidden', 'false');
+      langBtn.setAttribute('aria-expanded', 'true');
       langSearch.value = '';
       renderLanguages();
       langSearch.focus();
     };
 
-    closeBtn.onclick = () => langModal.style.display = 'none';
-    window.onclick = (e) => { if (e.target == langModal) langModal.style.display = 'none'; };
+    closeBtn.onclick = closeLanguageModal;
+    langModal.addEventListener('click', (e) => { if (e.target === langModal) closeLanguageModal(); });
+    langModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeLanguageModal();
+      }
+      if (e.key === 'Tab') {
+        const focusable = Array.from(langModal.querySelectorAll('button, input, [tabindex="0"]'));
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
     langSearch.oninput = (e) => renderLanguages(e.target.value);
 
     // Start polling to load languages once widget is ready
