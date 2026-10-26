@@ -198,6 +198,13 @@
     return { state: "available", action: "buy", label: "Buy", badge: null, disabled: false };
   }
 
+  function bookByline(product) {
+    if (!product) return "";
+    if (typeof product.author_name === "string" && product.author_name.trim()) return product.author_name.trim();
+    if (typeof product.creator_name === "string" && product.creator_name.trim()) return product.creator_name.trim();
+    return "";
+  }
+
   function renderCataloguePage(products, pageSize, renderProduct) {
     if (!Array.isArray(products) || typeof renderProduct !== "function") return 0;
     const page = products.slice(0, pageSize);
@@ -242,6 +249,7 @@
 
   const api = {
     buildSearchParameters: buildSearchParameters,
+    bookByline: bookByline,
     formatPrice: formatPrice,
     amountFromMinor: amountFromMinor,
     priceMinor: priceMinor,

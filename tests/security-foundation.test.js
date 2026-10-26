@@ -42,6 +42,10 @@ const publicEligibilityMigration = fs.readFileSync(
   path.join(root, "supabase", "migrations", "20261026190000_inactive_category_public_access.sql"),
   "utf8"
 );
+const bookListingMigration = fs.readFileSync(
+  path.join(root, "supabase", "migrations", "20261026200000_pdf_book_listings.sql"),
+  "utf8"
+);
 const admin = fs.readFileSync(path.join(root, "admin.js"), "utf8");
 const adminCore = require(path.join(root, "admin-core.js"));
 const account = fs.readFileSync(path.join(root, "account.js"), "utf8");
@@ -94,15 +98,23 @@ test("administrator CRUD table grants remain protected by row-level policies", (
   assert.match(migration, /create policy "Creators submit drafts"[\s\S]*?public\.has_role\('creator'\)/i);
 });
 
-test("Creator Studio remains administrator-only until creator storage permissions are designed", () => {
+test("Creator Studio keeps administrator publication control and limits creator writes to own unpublished listings", () => {
   assert.match(admin, /required_role:\s*"admin"/);
+  assert.match(admin, /required_role:\s*"creator"|hasRole\("creator"\)/);
   assert.match(migration, /create policy "Creators submit drafts"[\s\S]*?status in \('draft', 'pending'\)/i);
   assert.match(migration, /create policy "Creators edit own unapproved products"[\s\S]*?status in \('draft', 'pending', 'rejected'\)/i);
   assert.match(migration, /create policy "Admins manage product files" on storage\.objects\s+for all to authenticated using \(bucket_id = 'product-files' and public\.has_role\('admin'\)\)/i);
   assert.match(migration, /create policy "Admins manage product previews" on storage\.objects\s+for all to authenticated using \(bucket_id = 'product-previews' and public\.has_role\('admin'\)\)/i);
-  assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /restricted to authorized administrators/);
+  assert.match(bookListingMigration, /create policy "Creators upload own product files"/i);
+  assert.match(bookListingMigration, /p\.creator_id is distinct from \(select auth\.uid\(\)\)/i);
+  assert.match(bookListingMigration, /public\.has_role\('creator'\) and p\.creator_id = \(select auth\.uid\(\)\)/i);
+  assert.match(fs.readFileSync(path.join(root, "index.html"), "utf8"), /Creators cannot change another creator's products/);
   assert.match(admin, /fillForm\(product, true\)/);
-  assert.match(admin, /creator_id: productById\.get\(id\)\?\.creator_id \|\| signedInUser\.id/);
+  assert.match(admin, /studioRole === "admin"[\s\S]*?productById\.get\(id\)\?\.creator_id \|\| signedInUser\.id/);
+  assert.equal(adminCore.canEditListing("creator", { status: "published" }), false);
+  assert.equal(adminCore.canEditListing("creator", { status: "draft" }), true);
+  assert.equal(adminCore.canEditListing("admin", { status: "published" }), true);
+  assert.deepEqual(adminCore.permittedStatuses("creator"), ["draft", "pending"]);
 });
 
 test("Creator Studio product filters, exact metrics and product metadata are validated", () => {
@@ -749,7 +761,7 @@ test("administrator publishing remains profile-independent and facets match publ
     discoveryMigration.indexOf("create function public.related_public_products")
   );
 
-  assert.match(admin, /creator_id:\s*productById\.get\(id\)\?\.creator_id\s*\|\|\s*signedInUser\.id/);
+  assert.match(admin, /creator_id:\s*(?:studioRole === "admin"[\s\S]*?)?productById\.get\(id\)\?\.creator_id\s*\|\|\s*signedInUser\.id/);
   assert.match(creatorVisibilityMigration, /coalesce\(cp\.display_name, 'BookWell'\)/i);
   assert.doesNotMatch(categoryFacet, /creator_profiles/i);
   assert.doesNotMatch(languageFacet, /creator_profiles/i);
@@ -860,6 +872,44 @@ test("file validation checks byte signatures, permitted extensions, and size lim
     adminCore.validateFile(file("notes.pdf", [0x25, 0x50, 0x44, 0x46, 0x2d], 51 * 1024 * 1024), adminCore.productTypes, 50 * 1024 * 1024, "Product file"),
     /must be between/
   );
+  await assert.rejects(
+    adminCore.validateFile(file("notes.pdf", [0x25, 0x50, 0x44, 0x46, 0x2d], 0), adminCore.productTypes, 50 * 1024 * 1024, "Product file"),
+    /must be between/
+  );
+  await assert.rejects(
+    adminCore.validateFile(
+      { ...file("notes.pdf", [0x25, 0x50, 0x44, 0x46, 0x2d]), type: "application/zip" },
+      adminCore.productTypes,
+      50 * 1024 * 1024,
+      "Product file"
+    ),
+    /declared type/
+  );
+});
+
+test("optional book metadata is validated without requiring ISBN or page count", () => {
+  assert.deepEqual(adminCore.validateBookFields({}), {
+    author_name: null,
+    subtitle: null,
+    publication_year: null,
+    edition: null,
+    isbn: null,
+    page_count: null
+  });
+  const book = adminCore.validateBookFields({
+    authorName: " Ada Lovelace ",
+    subtitle: "Notes",
+    publicationYear: "1843",
+    edition: "1st",
+    isbn: "978-3-16-148410-0",
+    pageCount: "240"
+  });
+  assert.equal(book.author_name, "Ada Lovelace");
+  assert.equal(book.publication_year, 1843);
+  assert.equal(book.page_count, 240);
+  assert.throws(() => adminCore.validateBookFields({ isbn: "abc" }), /ISBN/);
+  assert.throws(() => adminCore.validateBookFields({ publicationYear: "99" }), /year/);
+  assert.throws(() => adminCore.validateBookFields({ pageCount: "0" }), /Page count/);
 });
 
 test("download authorization is checked before issuing a short-lived URL", () => {
@@ -1298,6 +1348,24 @@ test("marketplace presentation uses editorial tokens and real creator attributio
   assert.match(marketplace, /addText\(elements\.dialogContent, "p", "Price: " \+ money\(product\), "product-detail-price"\)/);
 });
 
+test("PDF book listings keep original files private and expose only public book metadata", () => {
+  assert.match(bookListingMigration, /add column if not exists author_name text/i);
+  assert.match(bookListingMigration, /grant select \([\s\S]*?author_name, subtitle, publication_year/i);
+  assert.doesNotMatch(
+    bookListingMigration.match(/grant select \([\s\S]*?\) on public\.products to anon, authenticated/i)?.[0] || "",
+    /file_path/i
+  );
+  assert.doesNotMatch(bookListingMigration, /bucket_id = 'product-files'[\s\S]*?for select to anon/i);
+  assert.match(bookListingMigration, /create function public\.search_public_products\([\s\S]*?author_name text, subtitle text/i);
+  assert.match(bookListingMigration, /p\.author_name, p\.subtitle, p\.publication_year, p\.edition, p\.isbn, p\.page_count/i);
+  assert.doesNotMatch(bookListingMigration, /make the bucket public|public = true/i);
+  assert.match(admin, /saveInProgress/);
+  assert.match(admin, /admin-product-file-summary/);
+  assert.match(index, /Maximum size is 50 MB/);
+  assert.match(marketplace, /function bookByline\(product\)/);
+  assert.match(marketplace, /Author: " \+ product\.author_name\.trim\(\)/);
+});
+
 test("homepage hero uses the supplied artwork and database-backed subject links", () => {
   const marketplace = fs.readFileSync(path.join(root, "marketplace.js"), "utf8");
   assert.match(index, /class="hero-highlight">learning<\/span>/);
@@ -1310,4 +1378,97 @@ test("homepage hero uses the supplied artwork and database-backed subject links"
   assert.match(marketplace, /featuredCategoryLinks\.addEventListener\("click", selectCategory\)/);
   assert.match(marketplace, /window\.location\.hash = "#library";\s+loadProducts\(false\);/);
   assert.doesNotMatch(index, /hero-logo-card|hero-art-orb/);
+});
+
+test("PDF book marketplace lifecycle, upload validation, creator isolation, and metadata presentation", async () => {
+  function makeFile(name, content, size, type) {
+    const bytes = Uint8Array.from(content);
+    return {
+      name,
+      type: type || "",
+      size: size === undefined ? bytes.length : size,
+      slice: () => ({ arrayBuffer: async () => bytes.buffer })
+    };
+  }
+
+  // 1. PDF Validation:
+  const validPdf = await adminCore.validateFile(
+    makeFile("guide.pdf", [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]),
+    adminCore.productTypes,
+    50 * 1024 * 1024,
+    "Book PDF"
+  );
+  assert.deepEqual(validPdf, { extension: "pdf", mime: "application/pdf" });
+
+  await assert.rejects(
+    adminCore.validateFile(makeFile("malware.exe", [0x25, 0x50, 0x44, 0x46, 0x2d]), adminCore.productTypes, 50 * 1024 * 1024, "Book PDF"),
+    /unsupported extension/
+  );
+
+  await assert.rejects(
+    adminCore.validateFile(makeFile("book.pdf", [0x25, 0x50, 0x44, 0x46, 0x2d], 100, "image/jpeg"), adminCore.productTypes, 50 * 1024 * 1024, "Book PDF"),
+    /declared type/
+  );
+
+  await assert.rejects(
+    adminCore.validateFile(makeFile("corrupt.pdf", [0x00, 0x00, 0x00, 0x00]), adminCore.productTypes, 50 * 1024 * 1024, "Book PDF"),
+    /does not match/
+  );
+
+  await assert.rejects(
+    adminCore.validateFile(makeFile("empty.pdf", [0x25, 0x50, 0x44, 0x46, 0x2d], 0), adminCore.productTypes, 50 * 1024 * 1024, "Book PDF"),
+    /must be between/
+  );
+
+  await assert.rejects(
+    adminCore.validateFile(makeFile("huge.pdf", [0x25, 0x50, 0x44, 0x46, 0x2d], 52428801), adminCore.productTypes, 50 * 1024 * 1024, "Book PDF"),
+    /must be between/
+  );
+
+  // 2. ISBN & Book Fields Validation:
+  assert.equal(adminCore.validateBookFields({ isbn: "0-19-852663-X" }).isbn, "0-19-852663-X");
+  assert.equal(adminCore.validateBookFields({ isbn: "0-19-852663-x" }).isbn, "0-19-852663-x");
+  assert.equal(adminCore.validateBookFields({ isbn: "9780198526636" }).isbn, "9780198526636");
+  assert.throws(() => adminCore.validateBookFields({ isbn: "12345" }), /ISBN/);
+  assert.throws(() => adminCore.validateBookFields({ publicationYear: "2150" }), /year/);
+  assert.throws(() => adminCore.validateBookFields({ pageCount: "-5" }), /Page count/);
+
+  // 3. Creator Permissions & Lifecycle:
+  assert.equal(adminCore.canEditListing("admin", { status: "published" }), true);
+  assert.equal(adminCore.canEditListing("creator", { status: "draft" }), true);
+  assert.equal(adminCore.canEditListing("creator", { status: "pending" }), true);
+  assert.equal(adminCore.canEditListing("creator", { status: "rejected" }), true);
+  assert.equal(adminCore.canEditListing("creator", { status: "published" }), false);
+  assert.equal(adminCore.canEditListing("creator", { status: "archived" }), false);
+  assert.deepEqual(adminCore.permittedStatuses("creator"), ["draft", "pending"]);
+  assert.ok(adminCore.permittedStatuses("admin").includes("published"));
+  assert.ok(adminCore.permittedStatuses("admin").includes("archived"));
+
+  // 4. Byline & Presentation:
+  assert.equal(marketplaceCore.bookByline({ author_name: "Jane Austen", creator_name: "BookWell" }), "Jane Austen");
+  assert.equal(marketplaceCore.bookByline({ author_name: "", creator_name: "BookWell" }), "BookWell");
+  assert.equal(marketplaceCore.bookByline({ creator_name: "BookWell" }), "BookWell");
+  assert.equal(marketplaceCore.bookByline({}), "");
+  assert.equal(marketplaceCore.bookByline(null), "");
+
+  // 5. Database & Storage Security Checks:
+  assert.match(bookListingMigration, /create policy "Creators upload own product files" on storage\.objects/i);
+  assert.match(bookListingMigration, /create policy "Creators delete own product files" on storage\.objects/i);
+  assert.match(bookListingMigration, /create policy "Creators read own product previews" on storage\.objects/i);
+  assert.match(bookListingMigration, /p\.creator_id is distinct from \(select auth\.uid\(\)\)/i);
+  assert.doesNotMatch(bookListingMigration, /grant select \([\s\S]*?file_path[\s\S]*?\) on public\.products/i);
+
+  // 6. UI & Lifecycle Guards in admin.js and index.html:
+  assert.match(admin, /saveInProgress/);
+  assert.match(admin, /removeStorageObjects\("product-files", uploadedProductPaths\)/);
+  assert.match(admin, /removeStorageObjects\("product-files", \[oldProductPath\]\)/);
+  assert.match(admin, /Upload failed\. Select Save listing to retry/);
+  assert.match(index, /id="admin-product-author"/);
+  assert.match(index, /id="admin-product-subtitle"/);
+  assert.match(index, /id="admin-product-isbn"/);
+  assert.match(index, /id="admin-product-pages"/);
+  assert.match(index, /id="admin-product-year"/);
+  assert.match(index, /id="admin-product-edition"/);
+  assert.match(index, /id="admin-product-file-summary"/);
+  assert.match(index, /id="admin-product-preview-summary"/);
 });

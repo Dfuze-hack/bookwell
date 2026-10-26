@@ -331,6 +331,12 @@
     });
   }
 
+  function bookByline(product) {
+    if (typeof product.author_name === "string" && product.author_name.trim()) return product.author_name.trim();
+    if (typeof product.creator_name === "string" && product.creator_name.trim()) return product.creator_name.trim();
+    return "";
+  }
+
   function renderProduct(product, target) {
     const destination = target || elements.results;
     const card = document.createElement("article");
@@ -371,9 +377,8 @@
         addText(card, "p", "Added " + new Date(createdAt).toLocaleDateString(), "product-creator");
       }
     }
-    if (typeof product.creator_name === "string" && product.creator_name.trim()) {
-      addText(card, "p", "By " + product.creator_name.trim(), "product-creator");
-    }
+    const byline = bookByline(product);
+    if (byline) addText(card, "p", "By " + byline, "product-creator");
     addText(card, "p", money(product), "product-price");
 
     const actions = document.createElement("div");
@@ -410,14 +415,28 @@
       elements.dialogContent.appendChild(preview);
       showPreview(preview, product.preview_path);
     }
+    if (typeof product.subtitle === "string" && product.subtitle.trim()) {
+      addText(elements.dialogContent, "p", product.subtitle.trim(), "product-subtitle");
+    }
     addText(elements.dialogContent, "p", product.description);
     addText(elements.dialogContent, "p", "Category: " + product.category_name);
     if (typeof product.language === "string" && product.language.trim()) {
       addText(elements.dialogContent, "p", "Language: " + product.language);
     }
+    if (typeof product.author_name === "string" && product.author_name.trim()) {
+      addText(elements.dialogContent, "p", "Author: " + product.author_name.trim());
+    }
     if (typeof product.creator_name === "string" && product.creator_name.trim()) {
       addText(elements.dialogContent, "p", "Creator: " + product.creator_name.trim());
     }
+    if (product.publication_year) addText(elements.dialogContent, "p", "Publication year: " + product.publication_year);
+    if (typeof product.edition === "string" && product.edition.trim()) {
+      addText(elements.dialogContent, "p", "Edition: " + product.edition.trim());
+    }
+    if (typeof product.isbn === "string" && product.isbn.trim()) {
+      addText(elements.dialogContent, "p", "ISBN: " + product.isbn.trim());
+    }
+    if (product.page_count) addText(elements.dialogContent, "p", "Pages: " + product.page_count);
     addText(elements.dialogContent, "p", "Price: " + money(product), "product-detail-price");
     addText(elements.dialogContent, "p", "Licence: " + product.license);
     addText(elements.dialogContent, "p", "Formats: " + product.formats.join(", "));
