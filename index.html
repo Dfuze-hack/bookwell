@@ -278,19 +278,16 @@
       outline: 3px solid #85bd96; outline-offset: 2px; border-color: var(--green);
       box-shadow: 0 0 0 3px rgba(46, 125, 79, 0.12);
     }
-    .search-control { position: relative; }
-    .search-control::before {
-      content: ""; position: absolute; top: 1.08rem; left: 0.9rem; width: 0.72rem; height: 0.72rem;
-      border: 2px solid #64746a; border-radius: 50%; pointer-events: none;
-    }
-    .search-control::after {
-      content: ""; position: absolute; top: 1.85rem; left: 1.58rem; width: 0.38rem;
-      height: 2px; background: #64746a; transform: rotate(45deg); transform-origin: left center;
-      pointer-events: none;
+    .search-control { position: relative; display: block; }
+    .search-control svg {
+      position: absolute; z-index: 1; top: calc(50% + 0.2rem); left: 0.9rem; width: 1.15rem; height: 1.15rem;
+      color: #64746a; pointer-events: none; transform: translateY(-50%);
     }
     .marketplace-tools .search-control input { padding-left: 2.45rem; }
-    .filter-actions { display: flex; grid-column: 4; align-items: end; }
-    .filter-actions button { min-height: 48px; width: 100%; margin: 0; cursor: pointer; }
+    .filter-actions { display: flex; grid-column: 3 / -1; align-items: end; gap: 0.65rem; }
+    .filter-actions button { min-height: 48px; flex: 1 1 0; margin: 0; cursor: pointer; }
+    #catalog-search-button { background: var(--green); color: #fff; }
+    #catalog-search-button:hover { background: var(--green-dark); border-color: var(--green-dark); }
     .currency-hint { grid-column: 1 / -1; margin: -0.1rem 0 0; color: #5c6d61; font: 0.88rem/1.5 Arial, sans-serif; }
     .library-results-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin: 2rem 0 0.75rem; }
     .library-results-heading h3 { margin: 0; color: var(--green-dark); font-size: 1.2rem; }
@@ -378,7 +375,9 @@
     #account h3, #account h4 { color: var(--green-dark); }
     #account-status { margin: 1rem 0; }
     #account-status.account-error { border-color: #d5a8a0; background: #fff8f6; color: #783b31; }
+    #account.highlight { background: #fff; }
     #account-auth { display: grid; grid-template-columns: minmax(0, 560px); justify-content: center; gap: 1rem; align-items: start; }
+    #account-auth .card { padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid #dce9df; border-top-width: 4px; border-radius: 14px; box-shadow: 0 12px 30px rgba(31, 77, 51, 0.08); }
     #account-auth form, #account-settings { min-width: 0; }
     #account-auth form[hidden], #account-dashboard[hidden], #account-auth[hidden], #account-verification[hidden] { display: none; }
     #account input:not([type="checkbox"]) {
@@ -389,8 +388,17 @@
       outline: 3px solid #85bd96; outline-offset: 2px;
     }
     #account button { cursor: pointer; }
-    .account-links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font: 0.95rem Arial, sans-serif; }
-    .account-links button, .account-subnav a { color: var(--green-dark); }
+    .account-links { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 0.85rem; font: 600 0.92rem/1.25 Arial, sans-serif; }
+    .account-links button {
+      appearance: none; min-height: 42px; padding: 0.65rem 0.95rem; border: 1px solid #cbded0;
+      border-radius: 8px; background: #f3f8f4; color: var(--green-dark); font: inherit;
+      transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    }
+    .account-links button:hover { border-color: #a7c8ae; background: #e8f4ec; transform: translateY(-1px); }
+    .account-links #account-show-signup { border-color: var(--green); background: var(--green); color: #fff; }
+    .account-links #account-show-signup:hover { border-color: var(--green-dark); background: var(--green-dark); }
+    .account-links button:focus-visible { outline: 3px solid #85bd96; outline-offset: 2px; }
+    .account-subnav a { color: var(--green-dark); }
     #account-verification { margin-top: 1rem; }
     #account-dashboard { display: grid; gap: 1.25rem; }
     .account-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
@@ -423,7 +431,8 @@
     }
     @media (max-width: 520px) {
       .marketplace-tools { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; padding: 1rem; }
-      .marketplace-tools .search-field, .marketplace-tools .category-field, .currency-hint, .filter-actions { grid-column: auto; }
+      .marketplace-tools .search-field, .marketplace-tools .category-field, .currency-hint { grid-column: auto; }
+      .filter-actions { grid-column: 1 / -1; }
       .library-results-heading { align-items: flex-start; flex-direction: column; gap: 0.2rem; }
       .product-card { min-height: 0; }
       #catalog-results { grid-template-columns: minmax(0, 1fr); }
@@ -557,6 +566,10 @@
       <label class="search-field">
         Search resources
         <span class="search-control">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+            <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.8"></circle>
+            <path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+          </svg>
           <input type="search" id="catalog-search" name="q" placeholder="Try a subject, topic, or keyword" autocomplete="off">
         </span>
       </label>
@@ -579,7 +592,7 @@
       <label>
         Price currency
         <select id="catalog-currency" name="currency">
-          <option value="">Choose currency</option><option value="USD">USD · US Dollar</option><option value="INR">INR · Indian Rupee</option><option value="EUR">EUR · Euro</option><option value="GBP">GBP · Pound Sterling</option><option value="AUD">AUD · Australian Dollar</option><option value="JPY">JPY · Japanese Yen</option><option value="KWD">KWD · Kuwaiti Dinar</option>
+          <option value="">Choose currency</option><option value="USD" selected>USD ($) · US Dollar</option><option value="INR">INR · Indian Rupee</option><option value="EUR">EUR · Euro</option><option value="GBP">GBP · Pound Sterling</option><option value="AUD">AUD · Australian Dollar</option><option value="JPY">JPY · Japanese Yen</option><option value="KWD">KWD · Kuwaiti Dinar</option>
         </select>
       </label>
       <label>
@@ -596,7 +609,10 @@
           <option value="newest">Recently updated</option><option value="title">Title A–Z</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option>
         </select>
       </label>
-      <div class="filter-actions"><button id="catalog-clear" class="button secondary" type="button">Clear filters</button></div>
+      <div class="filter-actions">
+        <button id="catalog-search-button" class="button" type="submit">Search</button>
+        <button id="catalog-clear" class="button secondary" type="button">Clear filters</button>
+      </div>
       <p class="currency-hint">Choose a currency when setting a price range. Ranges compare only products in that currency. Price sorting groups by currency. Prices are shown as listed; BookWell does not convert currencies.</p>
     </form>
     <div class="library-results-heading"><h3>Explore resources</h3><p>Only published resources appear here.</p></div>
@@ -803,7 +819,7 @@
         <input id="admin-product-price" name="price" type="number" min="0" max="20000000" step="0.01" inputmode="decimal" required>
         <label for="admin-product-currency">Price currency</label>
         <select id="admin-product-currency" name="currency" required>
-          <option value="USD">USD · US Dollar</option><option value="INR">INR · Indian Rupee</option><option value="EUR">EUR · Euro</option><option value="GBP">GBP · Pound Sterling</option><option value="AUD">AUD · Australian Dollar</option><option value="JPY">JPY · Japanese Yen</option><option value="KWD">KWD · Kuwaiti Dinar</option>
+          <option value="USD">USD ($) · US Dollar</option><option value="INR">INR · Indian Rupee</option><option value="EUR">EUR · Euro</option><option value="GBP">GBP · Pound Sterling</option><option value="AUD">AUD · Australian Dollar</option><option value="JPY">JPY · Japanese Yen</option><option value="KWD">KWD · Kuwaiti Dinar</option>
         </select>
         <label for="admin-product-status">Listing status</label>
         <select id="admin-product-status" name="status" required>

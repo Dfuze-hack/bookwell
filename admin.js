@@ -230,7 +230,7 @@
     elements.form.querySelectorAll('input[name="formats"]').forEach((input) => {
       input.checked = (product?.formats || []).includes(input.value);
     });
-    const currency = product?.currency || "INR";
+    const currency = product?.currency || "USD";
     elements.form.elements.currency.value = currency;
     setPriceStep();
     elements.price.value = window.BookWellMarketplaceCore.amountFromMinor(product?.price_minor || 0, currency)

@@ -313,6 +313,36 @@ test("catalogue query construction preserves filters, selected currency, sorting
     p_max_price_minor: 12550,
     p_currency: "USD"
   });
+
+  test("marketplace uses USD as the default while accurately formatting other stored currencies", () => {
+    const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+    assert.match(html, /<option value="USD" selected>USD \(\$\) · US Dollar<\/option>/);
+    assert.match(html, /<option value="USD">USD \(\$\) · US Dollar<\/option>/);
+    assert.match(fs.readFileSync(path.join(root, "admin.js"), "utf8"), /const currency = product\?\.currency \|\| "USD"/);
+    assert.equal(marketplaceCore.formatPrice(1299, "USD", "en-US"), "$12.99");
+    assert.match(marketplaceCore.formatPrice(50000, "INR", "en-IN"), /₹/);
+  });
+
+  test("catalogue exposes an explicit search action before clear filters and a positioned search icon", () => {
+    const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+    const searchButton = html.indexOf('id="catalog-search-button"');
+    const clearButton = html.indexOf('id="catalog-clear"');
+    assert.notEqual(searchButton, -1);
+    assert.ok(searchButton < clearButton);
+    assert.match(html, /id="catalog-search-button" class="button" type="submit">Search/);
+    assert.match(html, /<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">/);
+    assert.match(html, /\.search-control \{ position: relative; display: block; \}/);
+    assert.match(html, /\.search-control svg \{[\s\S]*?top: calc\(50% \+ 0\.2rem\)[\s\S]*?transform: translateY\(-50%\)/);
+  });
+
+  test("account actions use modern accessible styling and the account section stays white", () => {
+    const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+    assert.match(html, /#account\.highlight \{ background: #fff; \}/);
+    assert.match(html, /\.account-links button \{[\s\S]*?appearance: none;[\s\S]*?border-radius: 8px/);
+    assert.match(html, /\.account-links #account-show-signup \{[\s\S]*?background: var\(--green\);[\s\S]*?color: #fff/);
+    assert.match(html, /\.account-links button:focus-visible/);
+    assert.match(html, /<section id="volunteer" class="highlight">/);
+  });
   assert.throws(() => marketplaceCore.buildSearchParameters({
     search: "", category: "", priceType: "", fileFormat: "", sort: "newest",
     currency: "USD", minPrice: "10", maxPrice: "9"
