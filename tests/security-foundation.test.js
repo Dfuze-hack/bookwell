@@ -203,7 +203,8 @@ test("sign-in page owns the user auth forms and the homepage sends users there",
   assert.match(account, /elements\.auth\.hidden = !inlineAuthEnabled \|\| Boolean\(currentUser\)/);
   assert.match(signInPage, /id="account-signin"/);
   assert.match(signInPage, /id="account-signup"/);
-  assert.match(signInPage, /src="signin-student\.svg" alt="A student sitting on books and learning on her laptop"/);
+  assert.match(signInPage, /src="signin-student-reading\.png" alt="Illustration of a student wearing glasses reading a book while sitting cross-legged"/);
+  assert.match(signInPage, /\.welcome-art \{[\s\S]*?object-fit: contain;[\s\S]*?mix-blend-mode: multiply;/);
   assert.match(signInPage, /\.auth-form > p:not\(\.auth-switch\)/);
   assert.match(signInPage, /id="account-forgot"/);
   assert.match(signInPage, /src="signin\.js" defer/);
