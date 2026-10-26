@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sign in to your BookWell account to access your library and saved learning resources.">
+  <meta name="theme-color" content="#faf9f6">
+  <title>Sign In | BookWell</title>
+  <link rel="icon" type="image/png" href="bookwell_icon.png">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --page: #faf9f6;
+      --surface: #fff;
+      --green: #245b45;
+      --green-dark: #183e2f;
+      --sage: #edf3ed;
+      --text: #191919;
+      --muted: #737373;
+      --line: #e8e5df;
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 2.5rem;
+      background: var(--page);
+      color: var(--text);
+      font: 400 1rem/1.55 var(--sans);
+    }
+    a { color: var(--green); text-underline-offset: 0.2em; }
+    a:hover { color: var(--green-dark); }
+    :focus-visible { outline: 3px solid #328657; outline-offset: 3px; }
+    button, input { font: inherit; }
+    .auth-shell {
+      display: grid;
+      width: min(100%, 1120px);
+      min-height: min(730px, calc(100vh - 5rem));
+      grid-template-columns: minmax(0, 0.92fr) minmax(390px, 1.08fr);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 1.1rem;
+      background: var(--surface);
+      box-shadow: 0 22px 70px rgba(25, 25, 25, 0.08);
+    }
+    .auth-welcome {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 2rem;
+      padding: clamp(1.5rem, 4vw, 3rem);
+      background: var(--sage);
+    }
+    .brand { display: inline-flex; width: fit-content; align-items: center; }
+    .brand img { display: block; width: min(100%, 245px); height: auto; }
+    .welcome-art {
+      display: block;
+      width: min(115%, 540px);
+      max-width: none;
+      align-self: center;
+      margin: -0.75rem -7% -0.5rem;
+    }
+    .welcome-copy { max-width: 390px; }
+    .welcome-copy h2 { margin: 0 0 0.55rem; color: var(--green-dark); font: 400 clamp(1.8rem, 3vw, 2.45rem)/1.15 var(--serif); letter-spacing: -0.035em; }
+    .welcome-copy p { margin: 0; color: #59665d; line-height: 1.75; }
+    .auth-panel {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(2rem, 6vw, 5.25rem);
+      overflow-x: clip;
+    }
+    .auth-content { width: min(100%, 430px); min-width: 0; margin-inline: auto; }
+    .back-link { display: inline-flex; align-items: center; gap: 0.45rem; margin-bottom: 2.25rem; color: var(--muted); font-size: 0.88rem; text-decoration: none; }
+    .back-link:hover { color: var(--green); }
+    h1 { margin: 0; color: var(--green-dark); font: 400 clamp(2rem, 4vw, 2.65rem)/1.15 var(--serif); letter-spacing: -0.035em; }
+    .auth-intro { margin: 0.6rem 0 2rem; color: var(--muted); }
+    #account-status { margin: 0 0 1.15rem; color: #59665d; font-size: 0.9rem; }
+    #account-status:empty { display: none; }
+    #account-status.account-error { color: #8a322b; }
+    .auth-form[hidden], #account-verification[hidden] { display: none; }
+    .auth-form { width: 100%; min-width: 0; }
+    .auth-form h2 { margin: 0 0 1.2rem; color: var(--green-dark); font: 400 1.8rem/1.2 var(--serif); }
+    .auth-form > p:not(.auth-switch) { margin: -0.65rem 0 1.2rem; color: var(--muted); font-size: 0.93rem; }
+    .auth-form-signup h2 { margin-bottom: 1rem; }
+    .auth-form-signup .field { margin-bottom: 0.85rem; }
+    .field { display: grid; gap: 0.45rem; margin-bottom: 1.1rem; }
+    .field label { color: #3f4942; font-size: 0.88rem; font-weight: 600; }
+    .field input {
+      width: 100%;
+      min-height: 54px;
+      padding: 0.8rem 0.95rem;
+      border: 1px solid #d9d8d2;
+      border-radius: 0.55rem;
+      background: #fff;
+      color: var(--text);
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    .field input::placeholder { color: #999a94; }
+    .field input:focus { border-color: #71917b; outline: 0; box-shadow: 0 0 0 3px rgba(36, 91, 69, 0.12); }
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 3.2rem; }
+    .password-toggle {
+      position: absolute;
+      inset: 0.3rem 0.35rem 0.3rem auto;
+      display: grid;
+      width: 42px;
+      place-items: center;
+      border: 0;
+      border-radius: 0.4rem;
+      background: transparent;
+      color: #64746a;
+      cursor: pointer;
+    }
+    .password-toggle:hover { background: #f3f5f2; }
+    .password-toggle svg { width: 20px; height: 20px; }
+    .auth-options { display: flex; align-items: center; justify-content: flex-end; margin: 0.1rem 0 1.5rem; }
+    .text-button { padding: 0; border: 0; background: transparent; color: var(--green); cursor: pointer; font-size: 0.88rem; font-weight: 600; text-decoration: none; }
+    .text-button:hover { color: var(--green-dark); text-decoration: underline; text-underline-offset: 0.2em; }
+    .submit-button {
+      display: inline-flex;
+      width: 100%;
+      min-height: 54px;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.1rem;
+      border: 1px solid var(--green);
+      border-radius: 0.55rem;
+      background: var(--green);
+      color: white;
+      cursor: pointer;
+      font-weight: 650;
+      transition: background-color 150ms ease, transform 150ms ease;
+    }
+    .submit-button:hover { background: var(--green-dark); }
+    .submit-button:active { transform: translateY(1px); }
+    .submit-button:disabled { cursor: wait; opacity: 0.7; }
+    .auth-switch { margin: 1.4rem 0 0; color: var(--muted); text-align: center; font-size: 0.9rem; }
+    #account-verification { margin-top: 1.2rem; padding: 1rem; border: 1px solid #dfe8e1; border-radius: 0.6rem; background: #f6f9f5; }
+    #account-verification p { margin: 0 0 0.7rem; color: #4f5e52; font-size: 0.9rem; }
+    .setup-note { margin-top: 1.15rem; padding: 0.85rem 0.95rem; border-radius: 0.5rem; background: #f5f4ef; color: #6c6a62; font-size: 0.82rem; }
+    @media (max-width: 760px) {
+      body { display: block; padding: 1rem; }
+      .auth-shell { width: min(100%, 520px); min-height: 0; grid-template-columns: minmax(0, 1fr); margin: 0 auto; }
+      .auth-welcome { gap: 0.65rem; padding: 1.1rem 1.35rem 1.25rem; }
+      .brand img { width: 175px; }
+      .welcome-art { width: min(88%, 360px); max-height: 245px; margin: -0.2rem auto; }
+      .welcome-copy h2 { font-size: 1.55rem; }
+      .welcome-copy p { font-size: 0.9rem; }
+      .auth-panel { padding: 1.75rem clamp(1.25rem, 6vw, 2rem) 2rem; }
+      .back-link { margin-bottom: 1.2rem; }
+      .auth-intro { margin-bottom: 1.45rem; }
+    }
+    @media (max-width: 360px) {
+      body { padding: 0.55rem; }
+      .auth-shell { border-radius: 0.75rem; }
+      .auth-panel { padding-inline: 1rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="auth-welcome" aria-labelledby="welcome-title">
+      <a class="brand" href="index.html" aria-label="BookWell home">
+        <img src="bookwell-logo-full.png" alt="BookWell">
+      </a>
+      <img class="welcome-art" src="signin-student.svg" alt="A student sitting on books and learning on her laptop">
+      <div class="welcome-copy">
+        <h2 id="welcome-title">Welcome to BookWell</h2>
+        <p>Access your library, save your favorites, and keep learning at your own pace.</p>
+      </div>
+    </section>
+    <section class="auth-panel" aria-labelledby="page-title">
+      <div class="auth-content">
+        <a class="back-link" href="index.html"><span aria-hidden="true">←</span> Back to BookWell</a>
+        <h1 id="page-title">Sign In</h1>
+        <p class="auth-intro">Welcome back. Please sign in to your account.</p>
+        <p id="account-status" role="status" aria-live="polite"></p>
+        <div id="account-auth">
+          <form id="account-signin" class="auth-form">
+            <div class="field">
+              <label for="account-signin-email">Email address</label>
+              <input id="account-signin-email" name="email" type="email" placeholder="you@example.com" autocomplete="username" required>
+            </div>
+            <div class="field">
+              <label for="account-signin-password">Password</label>
+              <div class="password-wrap">
+                <input id="account-signin-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+                <button class="password-toggle" type="button" data-password-toggle="account-signin-password" aria-label="Show password" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.7"></path><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.7"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <div class="auth-options">
+              <button id="account-show-forgot" class="text-button" type="button">Forgot password?</button>
+            </div>
+            <button class="submit-button" type="submit">Sign In</button>
+            <p class="auth-switch">Don’t have an account? <button id="account-show-signup" class="text-button" type="button">Sign up</button></p>
+          </form>
+          <form id="account-signup" class="auth-form auth-form-signup" hidden>
+            <h2>Create your account</h2>
+            <div class="field"><label for="account-signup-email">Email address</label><input id="account-signup-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required></div>
+            <div class="field"><label for="account-signup-password">Password</label><input id="account-signup-password" name="password" type="password" autocomplete="new-password" minlength="8" required></div>
+            <div class="field"><label for="account-signup-confirm">Confirm password</label><input id="account-signup-confirm" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required></div>
+            <button class="submit-button" type="submit">Create account</button>
+            <p class="auth-switch">Already have an account? <button type="button" class="text-button" data-account-show-signin>Sign in</button></p>
+          </form>
+          <form id="account-forgot" class="auth-form" hidden>
+            <h2>Reset your password</h2>
+            <p>We’ll send a secure password-reset link if an account exists for your email.</p>
+            <div class="field"><label for="account-forgot-email">Email address</label><input id="account-forgot-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required></div>
+            <button class="submit-button" type="submit">Send reset link</button>
+            <p class="auth-switch"><button type="button" class="text-button" data-account-show-signin>Back to sign in</button></p>
+          </form>
+          <form id="account-reset" class="auth-form" hidden>
+            <h2>Choose a new password</h2>
+            <div class="field"><label for="account-reset-password">New password</label><input id="account-reset-password" name="password" type="password" autocomplete="new-password" minlength="8" required></div>
+            <div class="field"><label for="account-reset-confirm">Confirm new password</label><input id="account-reset-confirm" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required></div>
+            <button class="submit-button" type="submit">Update password</button>
+          </form>
+        </div>
+        <div id="account-verification" hidden>
+          <p>Check your inbox to verify your email address. If your link expired, you can request another email.</p>
+          <button id="account-verification-resend" class="text-button" type="button">Resend verification email</button>
+        </div>
+        <p class="setup-note">Your account session is protected by BookWell’s secure sign-in service. BookWell staff will never ask for your password.</p>
+      </div>
+    </section>
+  </main>
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+  <script src="account-client.js"></script>
+  <script src="account-core.js"></script>
+  <script src="signin.js" defer></script>
+</body>
+</html>

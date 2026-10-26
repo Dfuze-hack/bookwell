@@ -17,6 +17,10 @@ const commerceMigration = fs.readFileSync(
   path.join(root, "supabase", "migrations", "20261025205700_commerce_foundation.sql"),
   "utf8"
 );
+const discoveryMigration = fs.readFileSync(
+  path.join(root, "supabase", "migrations", "20261026120000_smart_discovery.sql"),
+  "utf8"
+);
 const admin = fs.readFileSync(path.join(root, "admin.js"), "utf8");
 const adminCore = require(path.join(root, "admin-core.js"));
 const account = fs.readFileSync(path.join(root, "account.js"), "utf8");
@@ -42,6 +46,8 @@ const paymentProvider = fs.readFileSync(
 const commerceCore = require(path.join(root, "commerce-core.js"));
 const frontend = [
   fs.readFileSync(path.join(root, "index.html"), "utf8"),
+  fs.readFileSync(path.join(root, "signin.html"), "utf8"),
+  fs.readFileSync(path.join(root, "signin.js"), "utf8"),
   admin,
   account,
   fs.readFileSync(path.join(root, "account-client.js"), "utf8"),
@@ -188,6 +194,26 @@ test("account auth uses Supabase sessions and handles signed-out and configured 
   assert.match(frontend, /PASSWORD_RECOVERY/);
 });
 
+test("sign-in page owns the user auth forms and the homepage sends users there", () => {
+  const signInPage = fs.readFileSync(path.join(root, "signin.html"), "utf8");
+  const signInScript = fs.readFileSync(path.join(root, "signin.js"), "utf8");
+  assert.match(index, /href="signin\.html" id="account-nav" class="nav-signin">Sign In/);
+  assert.match(index, /<div id="account-auth" hidden>/);
+  assert.match(account, /const inlineAuthEnabled = document\.body\.hasAttribute\("data-inline-auth"\)/);
+  assert.match(account, /elements\.auth\.hidden = !inlineAuthEnabled \|\| Boolean\(currentUser\)/);
+  assert.match(signInPage, /id="account-signin"/);
+  assert.match(signInPage, /id="account-signup"/);
+  assert.match(signInPage, /src="signin-student\.svg" alt="A student sitting on books and learning on her laptop"/);
+  assert.match(signInPage, /\.auth-form > p:not\(\.auth-switch\)/);
+  assert.match(signInPage, /id="account-forgot"/);
+  assert.match(signInPage, /src="signin\.js" defer/);
+  assert.match(signInScript, /client\.auth\.signInWithPassword/);
+  assert.match(signInScript, /client\.auth\.signUp/);
+  assert.match(signInScript, /client\.auth\.resetPasswordForEmail/);
+  assert.match(signInScript, /client\.auth\.updateUser/);
+  assert.match(signInScript, /window\.location\.replace\(homepageUrl\(\)\)/);
+});
+
 test("account database policies isolate profiles and saved products without self-granting access", () => {
   assert.match(accountMigration, /create table public\.user_profiles[\s\S]*?user_id uuid primary key references auth\.users/i);
   assert.match(accountMigration, /create policy "Users read own private profile"[\s\S]*?user_id = \(select auth\.uid\(\)\)/i);
@@ -295,6 +321,7 @@ test("catalogue query construction preserves filters, selected currency, sorting
   const parameters = marketplaceCore.buildSearchParameters({
     search: "  algebra  ",
     category: "study-resources",
+    language: "English",
     priceType: "free",
     fileFormat: "PDF",
     sort: "price_asc",
@@ -305,6 +332,7 @@ test("catalogue query construction preserves filters, selected currency, sorting
   assert.deepEqual(parameters, {
     p_search: "algebra",
     p_category: "study-resources",
+    p_language: "English",
     p_price_type: "free",
     p_file_format: "PDF",
     p_sort: "price_asc",
@@ -360,6 +388,76 @@ test("catalogue query construction preserves filters, selected currency, sorting
   assert.equal(marketplaceCore.priceMinor("1.234", "KWD"), 1234);
   assert.throws(() => marketplaceCore.priceMinor("1.2", "JPY"), /price between/);
   assert.throws(() => marketplaceCore.priceMinor("2147483.648", "KWD"), /price between/);
+});
+
+test("discovery recommendations use explainable listing metadata and related matches", () => {
+  const products = [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      slug: "recent-science",
+      title: "Science primer",
+      description: "An introduction to science",
+      category_name: "Science",
+      language: "English",
+      formats: ["PDF"],
+      tags: ["biology"],
+      created_at: "2026-10-20T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      slug: "algebra",
+      title: "Algebra workbook",
+      description: "Practice algebra",
+      category_name: "Mathematics",
+      language: "English",
+      formats: ["PDF"],
+      tags: ["algebra"],
+      created_at: "2026-10-19T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440003",
+      slug: "older-science",
+      title: "Science field guide",
+      description: "Field notes",
+      category_name: "Science",
+      language: "French",
+      formats: ["EPUB"],
+      tags: ["ecology"],
+      created_at: "2026-10-01T00:00:00Z"
+    }
+  ];
+  const recommended = marketplaceCore.rankRecommendations(products, {
+    categories: ["Science"],
+    search: "",
+    recentlyViewed: ["recent-science"]
+  }, 2);
+  assert.deepEqual(recommended.map((product) => product.slug), ["older-science", "algebra"]);
+  const related = marketplaceCore.relatedProducts(products, products[1], 4);
+  assert.deepEqual(related.map((product) => product.slug), ["recent-science"]);
+  assert.deepEqual(marketplaceCore.relatedProducts([], products[0], 4), []);
+});
+
+test("smart discovery migration exposes only published metadata and exact listing facets", () => {
+  assert.match(discoveryMigration, /p_language text default null/i);
+  assert.match(discoveryMigration, /p\.status = 'published'\s+and c\.is_active/i);
+  assert.match(discoveryMigration, /p\.created_at end desc/i);
+  assert.match(discoveryMigration, /create function public\.browse_public_categories\(\)[\s\S]*?p\.status = 'published'[\s\S]*?count\(p\.id\)/i);
+  assert.match(discoveryMigration, /create function public\.browse_public_languages\(\)[\s\S]*?p\.status = 'published'/i);
+  assert.match(discoveryMigration, /create function public\.related_public_products[\s\S]*?p\.id <> target_product[\s\S]*?p\.status = 'published'/i);
+  assert.match(discoveryMigration, /p\.category_id = a\.category_id[\s\S]*?p\.formats && a\.formats[\s\S]*?exists\s*\([\s\S]*?lower\(product_tag\.tag\) = lower\(anchor_tag\.tag\)/i);
+  assert.doesNotMatch(discoveryMigration, /file_path/);
+  assert.match(discoveryMigration, /security definer\s+set search_path = ''/i);
+});
+
+test("smart discovery sections remain clear without a catalog connection and avoid nested section spacing", () => {
+  const marketplace = fs.readFileSync(path.join(root, "marketplace.js"), "utf8");
+  assert.match(index, /id="discover" aria-labelledby="discover-title"/);
+  assert.match(index, /id="catalog-language" name="language"/);
+  assert.match(index, /\.discovery-grid > section \{ min-width: 0; margin: 0; padding: 0; \}/);
+  assert.match(index, /#product-related \{ max-width: none; margin: 1\.5rem 0 0; padding: 1rem 0 0;/);
+  assert.match(marketplace, /Recommendations will appear when published resources are available/);
+  assert.match(marketplace, /Recently added resources will appear when the public catalog is connected/);
+  assert.match(marketplace, /renderActiveFilters\(\);\s*loadProducts\(false\);/);
 });
 
 test("catalogue response validation rejects malformed rows and accepts valid products", () => {
@@ -525,4 +623,18 @@ test("marketplace presentation uses editorial tokens and real creator attributio
   assert.match(marketplace, /typeof product\.creator_name === "string" && product\.creator_name\.trim\(\)/);
   assert.match(marketplace, /addText\(card, "p", money\(product\), "product-price"\)/);
   assert.match(marketplace, /addText\(elements\.dialogContent, "p", "Price: " \+ money\(product\), "product-detail-price"\)/);
+});
+
+test("homepage hero uses the supplied artwork and database-backed subject links", () => {
+  const marketplace = fs.readFileSync(path.join(root, "marketplace.js"), "utf8");
+  assert.match(index, /class="hero-highlight">learning<\/span>/);
+  assert.match(index, /src="bookwell-hero-art\.png"/);
+  assert.match(index, /class="hero-illustration"/);
+  assert.match(index, /id="account-nav" class="nav-signin">Sign In/);
+  assert.match(index, /id="featured-category-links"/);
+  assert.match(index, /id="featured-empty-state"/);
+  assert.match(marketplace, /featuredButton\.textContent|featuredButton\.append\(categoryName, action\)/);
+  assert.match(marketplace, /featuredCategoryLinks\.addEventListener\("click", selectCategory\)/);
+  assert.match(marketplace, /window\.location\.hash = "#library";\s+loadProducts\(false\);/);
+  assert.doesNotMatch(index, /hero-logo-card|hero-art-orb/);
 });

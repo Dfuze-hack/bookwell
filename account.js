@@ -4,6 +4,7 @@
   const accountClient = window.BookWellAccountClient;
   const core = window.BookWellAccountCore;
   const client = accountClient?.client || null;
+  const inlineAuthEnabled = document.body.hasAttribute("data-inline-auth");
   const elements = {
     status: document.getElementById("account-status"),
     auth: document.getElementById("account-auth"),
@@ -64,7 +65,7 @@
   }
 
   function redirectUrl() {
-    return window.location.origin + window.location.pathname + "#account";
+    return new URL("signin.html", window.location.href).href;
   }
 
   function isEmailVerified(user) {
@@ -524,9 +525,9 @@
   document.getElementById("account-show-forgot").addEventListener("click", () => showAuthForm(elements.forgot));
   document.getElementById("account-verification-resend").addEventListener("click", resendVerification);
   window.addEventListener("hashchange", () => {
-    if (location.hash === "#account" && client && authEvent === "PASSWORD_RECOVERY") {
+    if (inlineAuthEnabled && location.hash === "#account" && client && authEvent === "PASSWORD_RECOVERY") {
       elements.dashboard.hidden = true;
-      elements.auth.hidden = false;
+      elements.auth.hidden = !inlineAuthEnabled;
       elements.reset.hidden = false;
       [elements.signIn, elements.signUp, elements.forgot].forEach((form) => { form.hidden = true; });
     }
@@ -543,13 +544,15 @@
   } else if (accountAvailability === "client-unavailable") {
     setStatus("Account sign-in is unavailable because the Supabase JavaScript client did not load. Check the connection to its pinned CDN asset.", true);
   } else {
-    elements.status.textContent = "Sign in or create a free account to save resources and build your personal library.";
+    elements.status.textContent = inlineAuthEnabled
+      ? "Sign in or create a free account to save resources and build your personal library."
+      : "Use the Sign In page to access your BookWell account.";
     client.auth.onAuthStateChange((event, session) => {
       authEvent = event;
       if (session?.user && !isEmailVerified(session.user)) {
         currentUser = null;
         elements.email.value = session.user.email || elements.email.value;
-        elements.auth.hidden = false;
+        elements.auth.hidden = !inlineAuthEnabled;
         elements.dashboard.hidden = true;
         elements.verify.hidden = false;
         setStatus("Please verify your email before signing in to BookWell.", true);
@@ -559,11 +562,11 @@
         return;
       }
       currentUser = session?.user || null;
-      elements.auth.hidden = Boolean(currentUser);
+      elements.auth.hidden = !inlineAuthEnabled || Boolean(currentUser);
       elements.dashboard.hidden = !currentUser;
       elements.verify.hidden = true;
       if (event === "PASSWORD_RECOVERY" && session) {
-        elements.auth.hidden = false;
+        elements.auth.hidden = !inlineAuthEnabled;
         elements.dashboard.hidden = true;
         elements.reset.hidden = false;
         [elements.signIn, elements.signUp, elements.forgot].forEach((form) => { form.hidden = true; });

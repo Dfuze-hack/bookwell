@@ -233,7 +233,7 @@
     .mega-left { flex: 1; max-width: 350px; }
     .mega-left h2 { color: #ffffff; font-size: 2.2rem; margin-bottom: 0.5rem; }
     .mega-left p { color: var(--line); line-height: 1.6; font-size: 1.05rem; }
-    
+
     .mega-right { flex: 1; display: flex; flex-direction: column; gap: 1.5rem; }
     .mega-link {
       display: flex;
@@ -491,6 +491,7 @@
     }
     .logo img { height: 44px; }
     nav ul { align-items: center; gap: 0.25rem; }
+    nav ul a .language-globe { width: 1.05rem; height: 1.05rem; margin-right: 0.4rem; flex: 0 0 auto; }
     nav ul a {
       display: inline-flex;
       align-items: center;
@@ -503,6 +504,8 @@
       transition: background-color 150ms ease, color 150ms ease;
     }
     nav ul a:hover, nav ul a:focus-visible { background: transparent; color: var(--green); text-decoration: underline; text-underline-offset: 0.35rem; }
+    nav ul a.nav-signin { min-height: 42px; margin-left: 0.2rem; padding-inline: 1.15rem; border-radius: var(--radius-sm); background: var(--green); color: #fff; font-weight: 650; }
+    nav ul a.nav-signin:hover, nav ul a.nav-signin:focus-visible { background: var(--green-dark); color: #fff; text-decoration: none; }
     .dropdown:hover .mega-menu, .dropdown:focus-within .mega-menu { display: block; }
     .mega-menu { top: calc(100% - 1px); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
     .nav-menu-toggle { display: none; }
@@ -510,9 +513,9 @@
     .hero {
       position: relative;
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(250px, 0.85fr);
+      grid-template-columns: minmax(0, 0.82fr) minmax(250px, 1.18fr);
       align-items: center;
-      gap: clamp(2rem, 6vw, 5rem);
+      gap: clamp(1.75rem, 4vw, 3rem);
       min-height: 545px;
       max-width: none;
       padding: clamp(4rem, 8vw, 7rem) max(1.25rem, calc((100% - var(--content-width)) / 2));
@@ -535,11 +538,11 @@
       text-transform: uppercase;
     }
     .hero h1 {
-      max-width: 13ch;
+      max-width: 16ch;
       margin: 0 0 1rem;
       color: var(--green-dark);
       font-family: var(--font-editorial);
-      font-size: clamp(3rem, 5.8vw, 5rem);
+      font-size: clamp(3rem, 5.4vw, 4.65rem);
       font-weight: 400;
       letter-spacing: -0.045em;
       line-height: 1.02;
@@ -575,21 +578,30 @@
     .hero-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .hero-actions .button { margin: 0; }
     .hero-art { position: relative; display: grid; min-height: 340px; place-items: center; }
-    .hero-logo-card {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      width: min(100%, 390px);
-      min-height: 250px;
-      place-items: center;
-      align-content: center;
-      gap: 1rem;
-      padding: 2.5rem;
-      border: 1px solid #e1e7df;
-      border-radius: var(--radius-lg);
-      background: var(--green-light);
+    .hero-highlight { color: var(--green); font-style: italic; }
+    .hero-topics { max-width: 590px; margin: 1.3rem 0 1.45rem; }
+    .hero-topics-label { display: block; margin-bottom: 0.55rem; color: var(--muted); font-size: 0.78rem; font-weight: 600; }
+    .hero .category-links { justify-content: flex-start; gap: 0.45rem; margin: 0; }
+    .hero .category-links button { min-height: 36px; padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.8rem; }
+    .hero .category-links button[aria-pressed="true"] { border-color: #d9e3da; background: #edf2ed; color: var(--green-dark); }
+    .hero-art { min-height: 390px; }
+    .hero-illustration { display: block; width: min(100%, 700px); height: auto; overflow: visible; transform: rotate(-5deg); transform-origin: center; }
+    .featured-collections { padding-top: 1.2rem; }
+    .featured-collections h2 { color: var(--green-dark); font-family: var(--font-editorial); font-size: clamp(2rem, 3vw, 2.8rem); font-weight: 400; letter-spacing: -0.035em; line-height: 1.15; }
+    .featured-collections-header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.35rem; }
+    .featured-collections-header p { color: var(--muted); }
+    .featured-category-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .featured-category-links button {
+      display: flex; min-height: 138px; flex-direction: column; align-items: flex-start; justify-content: space-between;
+      padding: 1.2rem 1.25rem; border: 1px solid var(--line); border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.76); color: var(--text); cursor: pointer; text-align: left;
+      transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
     }
-    .hero .hero-logo-card img.hero-logo { display: block; width: 100%; height: auto; max-height: 120px; margin: 0; object-fit: contain; }
+    .featured-category-links button:hover { transform: translateY(-2px); border-color: #c8d5ca; background: #fff; }
+    .featured-category-links button[aria-pressed="true"] { border-color: #a9bbac; background: var(--green-light); }
+    .featured-category-name { font-family: var(--font-editorial); font-size: 1.45rem; line-height: 1.2; }
+    .featured-category-action { color: var(--green); font-size: 0.84rem; font-weight: 650; }
+    .featured-empty { padding: 1.25rem; border: 1px dashed #d8d5ce; border-radius: var(--radius-md); color: var(--muted); }
     section { max-width: var(--content-width); padding: clamp(3.25rem, 6vw, 5.25rem) clamp(1.2rem, 4vw, 2.4rem); }
     section > h2, .library-heading h2 { font-family: var(--font-editorial); font-size: clamp(2rem, 3vw, 2.8rem); font-weight: 400; letter-spacing: -0.035em; line-height: 1.15; }
     section > p, section .highlight > p { color: var(--muted); }
@@ -706,6 +718,39 @@
     .button:disabled { cursor: not-allowed; opacity: 0.65; }
     .catalog-status { border-color: var(--line); border-radius: var(--radius-md); background: #fff; }
     .catalog-status.state-empty, .catalog-status.state-disconnected { border-color: var(--line); background: #f4f3ef; }
+    .discovery-section { background: #f6f5f1; }
+    .discovery-heading { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.4rem; }
+    .discovery-heading h2 { margin: 0.35rem 0 0; color: var(--green-dark); font: 400 clamp(2rem, 3vw, 2.7rem)/1.15 var(--font-editorial); letter-spacing: -0.035em; }
+    .discovery-heading > p, .discovery-caption, .discovery-note { color: #68736b; font-size: 0.9rem; }
+    .discovery-heading > p { max-width: 340px; margin: 0; }
+    .interest-panel { margin: 0 0 1.25rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
+    .interest-panel summary { display: flex; align-items: baseline; justify-content: space-between; gap: 0.8rem; color: var(--green-dark); cursor: pointer; font-weight: 650; }
+    .interest-panel summary span { color: var(--muted); font-size: 0.8rem; font-weight: 400; }
+    .interest-panel > p { margin: 0.75rem 0; color: var(--muted); font-size: 0.88rem; }
+    .interest-panel fieldset { margin: 0; padding: 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+    .interest-panel legend { padding: 0 0.35rem; color: #47544a; font-size: 0.84rem; font-weight: 600; }
+    .interest-options { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+    .interest-choice { display: inline-flex; min-height: 42px; align-items: center; gap: 0.5rem; padding: 0.45rem 0.7rem; border: 1px solid var(--line); border-radius: var(--radius-sm); color: #3f4942; cursor: pointer; font-size: 0.87rem; }
+    .interest-choice:has(input:checked) { border-color: #a9bbac; background: #edf3ed; color: var(--green-dark); }
+    .interest-choice input { width: 1rem; height: 1rem; accent-color: var(--green); }
+    .interest-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.85rem; }
+    .interest-actions .button { min-height: 42px; }
+    .discovery-grid { display: grid; gap: 2rem; }
+    .discovery-grid > section { min-width: 0; margin: 0; padding: 0; }
+    .discovery-grid h3 { margin: 0; color: var(--text); font: 400 1.5rem/1.25 var(--font-editorial); }
+    .discovery-caption { margin: 0.35rem 0 0.8rem; }
+    .discovery-products { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 0.9rem; }
+    .discovery-products .product-card { min-height: 0; padding: 0.9rem; }
+    .discovery-products .product-card .product-description { min-height: 0; }
+    .discovery-empty, .discovery-note { color: #68736b; font-size: 0.9rem; }
+    .discovery-empty { padding: 0.9rem 1rem; border: 1px dashed #d5d1c8; border-radius: var(--radius-sm); background: rgba(255,255,255,.72); }
+    .discovery-note { margin: 0.5rem 0 1rem; }
+    .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.8rem 0; }
+    .active-filters-label { color: var(--muted); font-size: 0.83rem; }
+    .active-filter-chip { display: inline-flex; min-height: 36px; align-items: center; gap: 0.45rem; padding: 0.35rem 0.65rem; border: 1px solid #cbd9cd; border-radius: var(--radius-sm); background: #f1f6f1; color: var(--green-dark); cursor: pointer; font: 550 0.82rem/1.2 var(--font-ui); }
+    .active-filter-chip:hover { border-color: var(--green); background: #e5efe6; }
+    #product-related { max-width: none; margin: 1.5rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--line); }
+    #product-related h3 { font: 400 1.35rem/1.3 var(--font-editorial); }
 
     #account, #admin { scroll-margin-top: 5.5rem; }
     #account-auth { grid-template-columns: minmax(0, 540px); }
@@ -763,7 +808,7 @@
 
     @media (max-width: 900px) {
       .hero { min-height: 520px; grid-template-columns: minmax(0, 1.15fr) minmax(200px, 0.85fr); }
-      .hero-art { min-height: 280px; }
+      .hero-art { min-height: 300px; }
       nav ul a { padding-inline: 0.6rem; font-size: 0.86rem; }
     }
     @media (max-width: 900px) {
@@ -800,9 +845,7 @@
       .hero { grid-template-columns: minmax(0, 1fr); gap: 1rem; min-height: 0; padding-block: 4rem 3.5rem; }
       .hero-copy { max-width: 680px; }
       .hero h1 { max-width: 15ch; font-size: clamp(2.5rem, 9vw, 3.8rem); }
-      .hero-art { min-height: 220px; }
-      .hero-logo-card { width: min(75%, 320px); min-height: 160px; padding: 1.25rem; border-radius: var(--radius-lg); }
-      .hero .hero-logo-card img.hero-logo { max-height: 88px; }
+      .hero-art { min-height: 260px; }
       section { padding-block: 3.25rem; }
     }
     @media (max-width: 520px) {
@@ -815,8 +858,16 @@
       .hero-search .button { min-height: 44px; padding-inline: 0.75rem; font-size: 0.85rem; }
       .hero-actions { display: grid; grid-template-columns: 1fr; }
       .hero-actions .button { width: 100%; }
-      .hero-art { min-height: 190px; }
-      .hero-logo-card { width: min(78%, 290px); min-height: 145px; }
+      .hero-art { min-height: 210px; margin-top: -0.7rem; }
+      .hero-topics { margin-top: 1rem; }
+      .featured-collections { padding-top: 0.5rem; }
+      .featured-collections-header { align-items: flex-start; flex-direction: column; gap: 0.3rem; }
+      .discovery-heading { align-items: flex-start; flex-direction: column; gap: 0.45rem; }
+      .interest-panel summary { align-items: flex-start; flex-direction: column; gap: 0.2rem; }
+      .discovery-products { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+      .featured-category-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+      .featured-category-links button { min-height: 120px; padding: 1rem; }
+      .featured-category-name { font-size: 1.2rem; }
       .marketplace-tools { grid-template-columns: minmax(0, 1fr); gap: 0.8rem; padding: 1rem; }
       .marketplace-tools .search-field, .marketplace-tools .category-field, .currency-hint { grid-column: auto; }
       .filter-actions { grid-column: 1 / -1; }
@@ -845,11 +896,39 @@
       .studio-overview, .studio-nav { grid-template-columns: minmax(0, 1fr); }
       .filter-actions { flex-wrap: wrap; }
       .filter-actions .button { flex-basis: 100%; }
+      .featured-category-links, .discovery-products { grid-template-columns: minmax(0, 1fr); }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     }
-  </style>
+
+    /* Hero category pills */
+    .hero-category-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+    }
+    .hero-category-pills button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 36px;
+      padding: 0.3rem 0.85rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #454540;
+      cursor: pointer;
+      font: 550 0.82rem/1.2 var(--font-ui);
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+    .hero-category-pills button:hover {
+      border-color: #b0c5b3;
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
+</style>
 </head>
 <body>
 
@@ -894,11 +973,12 @@
         </div>
       </li>
       <li><a href="#library">Library</a></li>
+      <li><a href="#discover">Discover</a></li>
       <li><a href="#volunteer">Volunteer</a></li>
       <li><a href="#contact">Contact</a></li>
       <li><a href="#admin">Creator Studio</a></li>
-      <li><a href="#account" id="account-nav">Account</a></li>
-      <li><a href="#" id="lang-btn" aria-haspopup="dialog" aria-controls="lang-modal" aria-expanded="false">Language</a></li>
+      <li><a href="#" id="lang-btn" aria-haspopup="dialog" aria-controls="lang-modal" aria-expanded="false"><svg class="language-globe" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"></circle><path d="M3.5 12h17M12 3c2.2 2.4 3.2 5.4 3.2 9s-1 6.6-3.2 9c-2.2-2.4-3.2-5.4-3.2-9S9.8 5.4 12 3Z" stroke="currentColor" stroke-width="1.5"></path></svg>Language</a></li>
+      <li><a href="signin.html" id="account-nav" class="nav-signin">Sign In</a></li>
     </ul>
   </nav>
 
@@ -919,8 +999,8 @@
 
   <header class="hero" id="top">
     <div class="hero-copy">
-      <span class="hero-eyebrow">A world of learning</span>
-      <h1>Find your next great learning resource.</h1>
+      <span class="hero-eyebrow">—   A world of learning</span>
+      <h1>Find your next great <span class="hero-highlight">learning</span> resource.</h1>
       <p>Explore thoughtfully organized books and digital learning materials by subject, format, and language.</p>
       <form id="hero-search-form" class="hero-search" role="search">
         <label class="visually-hidden" for="hero-search">Search the BookWell library</label>
@@ -928,20 +1008,80 @@
           <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.8"></circle>
           <path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
         </svg>
-        <input id="hero-search" type="search" placeholder="Search by subject or topic" autocomplete="off">
-        <button class="button" type="submit">Search</button>
+        <input id="hero-search" type="search" placeholder="Search by subject or topic" autocomplete="off" list="discovery-search-suggestions">
+        <button class="button" type="submit">Search  →</button>
       </form>
-      <div class="hero-actions">
-        <a href="#library" class="button">Browse the Library</a>
-        <a href="#volunteer" class="button secondary">Volunteer With Us</a>
+      <datalist id="discovery-search-suggestions"></datalist>
+      <div class="hero-topics" hidden>
+        <div id="catalog-category-links" class="category-links" role="group" aria-label="Browse by category" hidden></div>
       </div>
     </div>
-    <div class="hero-art" aria-hidden="true">
-      <div class="hero-logo-card">
-        <img class="hero-logo" src="bookwell-logo-full.png" alt="">
-      </div>
+    <div class="hero-art">
+      <img
+        src="bookwell-hero-art.png"
+        alt="BookWell — Learn, Grow, Achieve — surrounded by books and pencils"
+        class="hero-illustration"
+      >
     </div>
   </header>
+
+  <section class="featured-collections" id="collections" aria-labelledby="collections-title">
+    <div class="featured-collections-header">
+      <div>
+        <span class="library-eyebrow">Find your next read</span>
+        <h2 id="collections-title">Explore by subject</h2>
+      </div>
+      <p>Browse available learning resources by topic.</p>
+    </div>
+    <div id="featured-category-links" class="featured-category-links" role="group" aria-label="Explore resources by subject" hidden></div>
+    <p id="featured-empty-state" class="featured-empty">Subject collections will appear here when the public library is connected.</p>
+  </section>
+
+  <section class="discovery-section" id="discover" aria-labelledby="discover-title">
+    <div class="discovery-heading">
+      <div>
+        <span class="library-eyebrow">A little more personal</span>
+        <h2 id="discover-title">Discover your next resource</h2>
+      </div>
+      <p>Recommendations use real listing details and your optional interests—not popularity claims.</p>
+    </div>
+    <details class="interest-panel">
+      <summary>Choose your learning interests <span>Optional · stored on this device</span></summary>
+      <p>Select subjects to shape recommendations. Your choices stay in this browser and do not affect access to products.</p>
+      <fieldset>
+        <legend>Subjects from the current catalog</legend>
+        <div id="discovery-interests" class="interest-options">
+          <p class="discovery-empty">Interests will appear when the public catalog is connected.</p>
+        </div>
+        <div class="interest-actions">
+          <button id="discovery-save-interests" class="button secondary" type="button">Save interests</button>
+          <button id="discovery-clear-interests" class="button secondary" type="button">Clear interests</button>
+        </div>
+      </fieldset>
+      <p id="discovery-preferences-status" class="discovery-note" role="status" aria-live="polite">Interests are optional.</p>
+    </details>
+    <p id="discovery-status" class="discovery-note" role="status" aria-live="polite">Discovery sections appear when the public catalog is connected.</p>
+    <div class="discovery-grid">
+      <section aria-labelledby="recommended-title">
+        <h3 id="recommended-title">Recommended for you</h3>
+        <p class="discovery-caption">A transparent match by your selected subjects, search, and listing details.</p>
+        <div id="recommended-results" class="grid discovery-products" hidden></div>
+        <p id="recommended-empty" class="discovery-empty" hidden>There are not enough published resources to make recommendations yet.</p>
+      </section>
+      <section aria-labelledby="recently-added-title">
+        <h3 id="recently-added-title">Recently added</h3>
+        <p class="discovery-caption">Ordered by the listing creation date recorded in the catalog.</p>
+        <div id="recently-added-results" class="grid discovery-products" hidden></div>
+        <p id="recently-added-empty" class="discovery-empty" hidden>New resources will appear here when they are published.</p>
+      </section>
+      <section aria-labelledby="recently-viewed-title">
+        <h3 id="recently-viewed-title">Recently viewed</h3>
+        <p class="discovery-caption">Your last few viewed listing IDs stay only in this browser.</p>
+        <div id="recently-viewed-results" class="grid discovery-products" hidden></div>
+        <p id="recently-viewed-empty" class="discovery-empty">Products you open will appear here on this device.</p>
+      </section>
+    </div>
+  </section>
 
   <section id="mission">
     <h2>Our Mission</h2>
@@ -968,11 +1108,10 @@
 
   <section id="library">
     <div class="library-heading">
-      <span class="library-eyebrow">A world of learning</span>
+      <span class="library-eyebrow">—   A world of learning</span>
       <h2>The Library</h2>
       <p>Discover thoughtful learning resources for curious minds everywhere. Explore by subject, format, and price, then find the right resource for your next step.</p>
     </div>
-    <div id="catalog-category-links" class="category-links" role="group" aria-label="Browse by category" hidden></div>
     <form class="marketplace-tools" id="catalog-filters" role="search">
       <label class="search-field">
         Search resources
@@ -981,12 +1120,16 @@
             <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.8"></circle>
             <path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
           </svg>
-          <input type="search" id="catalog-search" name="q" placeholder="Try a subject, topic, or keyword" autocomplete="off">
+          <input type="search" id="catalog-search" name="q" placeholder="Try a subject, topic, or keyword" autocomplete="off" list="discovery-search-suggestions">
         </span>
       </label>
       <label class="category-field">
         Subject
         <select id="catalog-category" name="category"><option value="">All categories</option></select>
+      </label>
+      <label>
+        Language
+        <select id="catalog-language" name="language"><option value="">Any language</option></select>
       </label>
       <label>
         Price
@@ -1017,7 +1160,7 @@
       <label>
         Sort results
         <select id="catalog-sort" name="sort">
-          <option value="newest">Recently updated</option><option value="title">Title A–Z</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option>
+          <option value="newest">Recently added</option><option value="relevance">Relevance</option><option value="title">Title A–Z</option><option value="price_asc">Price: low to high (by currency)</option><option value="price_desc">Price: high to low (by currency)</option>
         </select>
       </label>
       <div class="filter-actions">
@@ -1026,6 +1169,7 @@
       </div>
       <p class="currency-hint">Choose a currency when setting a price range. Ranges compare only products in that currency. Price sorting groups by currency. Prices are shown as listed; BookWell does not convert currencies.</p>
     </form>
+    <div id="catalog-active-filters" class="active-filters" role="group" aria-label="Active filters" hidden></div>
     <div class="library-results-heading"><h3>Explore resources</h3><p>Only published resources appear here.</p></div>
     <p id="catalog-status" class="catalog-status state-loading" role="status" aria-live="polite">Loading resources…</p>
     <div id="catalog-empty-actions" hidden>
@@ -1044,9 +1188,9 @@
 
   <section id="account" class="highlight">
     <h2>Your BookWell account</h2>
-    <p>Sign in to save resources and keep your authorized learning materials together. Anyone can browse the public Library without an account.</p>
+    <p>Your saved resources, personal library, and account settings are available here after you sign in. Anyone can browse the public Library without an account.</p>
     <p id="account-status" class="catalog-status" role="status" aria-live="polite">Accounts require a configured Supabase project.</p>
-    <div id="account-auth">
+    <div id="account-auth" hidden>
       <form id="account-signin" class="card">
         <h3>Sign in</h3>
         <label for="account-signin-email">Email</label>
