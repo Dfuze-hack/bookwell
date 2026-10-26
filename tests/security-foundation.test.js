@@ -510,7 +510,19 @@ test("homepage search and category shortcuts use the existing catalogue filters"
 test("responsive navigation and accessible reduced-motion styles are present", () => {
   assert.match(index, /id="nav-menu-toggle"[^>]*aria-controls="primary-nav" aria-expanded="false"/);
   assert.match(index, /primaryNavContainer\.classList\.toggle\('nav-open', !isExpanded\)/);
-  assert.match(index, /@media \(max-width: 760px\)/);
+  assert.match(index, /@media \(max-width: 900px\)/);
   assert.match(index, /@media \(max-width: 350px\)/);
   assert.match(index, /@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test("marketplace presentation uses editorial tokens and real creator attribution", () => {
+  const marketplace = fs.readFileSync(path.join(root, "marketplace.js"), "utf8");
+  assert.match(index, /--page:\s*#faf9f6/i);
+  assert.match(index, /--text:\s*#191919/i);
+  assert.match(index, /--green:\s*#245b45/i);
+  assert.match(index, /--font-editorial:\s*Georgia/);
+  assert.match(index, /object-fit:\s*contain/);
+  assert.match(marketplace, /typeof product\.creator_name === "string" && product\.creator_name\.trim\(\)/);
+  assert.match(marketplace, /addText\(card, "p", money\(product\), "product-price"\)/);
+  assert.match(marketplace, /addText\(elements\.dialogContent, "p", "Price: " \+ money\(product\), "product-detail-price"\)/);
 });

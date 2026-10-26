@@ -139,29 +139,32 @@
     card.dataset.slug = product.slug;
     const title = document.createElement("h3");
     title.textContent = product.title;
-    card.appendChild(title);
     if (typeof product.preview_path === "string") {
       const preview = document.createElement("img");
       preview.alt = "";
       preview.loading = "lazy";
       preview.referrerPolicy = "no-referrer";
       preview.className = "product-preview";
-      card.insertBefore(preview, card.children[1]);
+      card.appendChild(preview);
       showPreview(preview, product.preview_path);
     } else {
       const cover = addText(card, "div", product.formats[0] || "Learning resource", "product-cover-fallback");
       cover.setAttribute("aria-hidden", "true");
     }
+    card.appendChild(title);
     addText(card, "p", product.description, "product-description");
 
     const metadata = document.createElement("div");
     metadata.className = "product-meta";
     addBadge(metadata, product.category_name);
     if (typeof product.language === "string" && product.language.trim()) addBadge(metadata, product.language);
-    addBadge(metadata, money(product), "price-badge");
+    if (product.formats.length) addBadge(metadata, product.formats[0]);
     if (product.included_with_premium) addBadge(metadata, "Premium included");
     card.appendChild(metadata);
-    addText(card, "p", "By " + product.creator_name);
+    if (typeof product.creator_name === "string" && product.creator_name.trim()) {
+      addText(card, "p", "By " + product.creator_name.trim(), "product-creator");
+    }
+    addText(card, "p", money(product), "product-price");
 
     const actions = document.createElement("div");
     actions.className = "product-actions";
@@ -215,8 +218,10 @@
     if (typeof product.language === "string" && product.language.trim()) {
       addText(elements.dialogContent, "p", "Language: " + product.language);
     }
-    addText(elements.dialogContent, "p", "Creator: " + product.creator_name);
-    addText(elements.dialogContent, "p", "Price: " + money(product));
+    if (typeof product.creator_name === "string" && product.creator_name.trim()) {
+      addText(elements.dialogContent, "p", "Creator: " + product.creator_name.trim());
+    }
+    addText(elements.dialogContent, "p", "Price: " + money(product), "product-detail-price");
     addText(elements.dialogContent, "p", "Licence: " + product.license);
     addText(elements.dialogContent, "p", "Formats: " + product.formats.join(", "));
     if (product.updated_at) {
