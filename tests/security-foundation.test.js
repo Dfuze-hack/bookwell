@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
+const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const migration = fs.readFileSync(
   path.join(root, "supabase", "migrations", "20261025185600_marketplace_foundation.sql"),
   "utf8"
@@ -493,4 +494,23 @@ test("catalogue and preview requests cannot expose private file paths", () => {
   assert.doesNotMatch(migration.slice(migration.indexOf("create or replace function public.public_product_by_slug"), migration.indexOf("create or replace function public.can_download_product")), /file_path/i);
   assert.match(migration, /values \('product-files', 'product-files', false/);
   assert.match(fs.readFileSync(path.join(root, "marketplace.js"), "utf8"), /functions\/v1\/create-download/);
+});
+
+test("homepage search and category shortcuts use the existing catalogue filters", () => {
+  const marketplace = fs.readFileSync(path.join(root, "marketplace.js"), "utf8");
+  assert.match(index, /id="hero-search-form"/);
+  assert.match(index, /id="hero-search"/);
+  assert.match(index, /id="catalog-search"/);
+  assert.match(index, /id="catalog-category-links"/);
+  assert.match(marketplace, /elements\.search\.value = elements\.heroSearch\.value\.trim\(\)/);
+  assert.match(marketplace, /elements\.category\.value = button\.dataset\.categorySlug/);
+  assert.match(marketplace, /categories\.forEach\(function \(category\)/);
+});
+
+test("responsive navigation and accessible reduced-motion styles are present", () => {
+  assert.match(index, /id="nav-menu-toggle"[^>]*aria-controls="primary-nav" aria-expanded="false"/);
+  assert.match(index, /primaryNavContainer\.classList\.toggle\('nav-open', !isExpanded\)/);
+  assert.match(index, /@media \(max-width: 760px\)/);
+  assert.match(index, /@media \(max-width: 350px\)/);
+  assert.match(index, /@media \(prefers-reduced-motion: reduce\)/);
 });

@@ -3,31 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Discover free, openly licensed learning resources from BookWell, organized by category, subject, and language.">
+  <meta name="description" content="Explore books and digital learning resources from BookWell, organized by subject, format, and language.">
   <link rel="canonical" href="https://www.bookwell.dpdns.org/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="BookWell | Free Books and Learning Resources">
-  <meta property="og:description" content="Discover free, openly licensed learning resources for students worldwide.">
+  <meta property="og:title" content="BookWell | Books and Learning Resources">
+  <meta property="og:description" content="Explore books and digital learning resources organized for learners everywhere.">
   <meta property="og:url" content="https://www.bookwell.dpdns.org/">
   <meta property="og:image" content="https://www.bookwell.dpdns.org/bookwell-logo-full.png">
-  <title>BookWell | Free Books and Learning Resources</title>
+  <title>BookWell | Books and Learning Resources</title>
   <link rel="icon" type="image/png" href="bookwell_icon.png">
   <link rel="apple-touch-icon" href="bookwell_icon.png">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --green-dark: #1f4d33;
-      --green: #2e7d4f;
-      --green-light: #e8f4ec;
-      --text: #1e2b22;
-      --muted: #4a5a4f;
-      --line: #d6e6da;
+      --green-dark: #173d2c;
+      --green: #23744b;
+      --green-light: #eaf4ed;
+      --text: #17231d;
+      --muted: #58675e;
+      --line: #dfe8e1;
+      --surface: #ffffff;
+      --page: #f7f9f7;
+      --accent: #f1bd63;
+      --shadow-soft: 0 8px 24px rgba(23, 61, 44, 0.07);
+      --shadow-card: 0 16px 38px rgba(23, 61, 44, 0.11);
+      --radius-sm: 0.75rem;
+      --radius-md: 1rem;
+      --radius-lg: 1.4rem;
+      --content-width: 1240px;
     }
     body {
-      font-family: Georgia, "Times New Roman", serif;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
-      line-height: 1.6;
-      background: #ffffff;
+      line-height: 1.65;
+      background: var(--page);
     }
     header, nav, section, footer { padding: 1rem 1.5rem; }
     nav {
@@ -462,14 +471,407 @@
     @media (max-width: 700px) { .marketplace-tools { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 420px) { .marketplace-tools { grid-template-columns: 1fr; } }
   </style>
+  <style>
+    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+    body { background: var(--page); }
+    [hidden] { display: none !important; }
+    a { color: var(--green); text-underline-offset: 0.2em; }
+    a:hover { color: var(--green-dark); }
+    :focus-visible { outline: 3px solid #328657; outline-offset: 3px; }
+    input, select, textarea, button { font: inherit; }
+
+    nav {
+      min-height: 78px;
+      padding: 0.8rem max(1.25rem, calc((100% - var(--content-width)) / 2));
+      background: rgba(255, 255, 255, 0.94);
+      border-bottom: 1px solid rgba(223, 232, 225, 0.9);
+      box-shadow: 0 3px 16px rgba(23, 61, 44, 0.04);
+      backdrop-filter: blur(14px);
+    }
+    .logo img { height: 44px; }
+    nav ul { align-items: center; gap: 0.25rem; }
+    nav ul a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 42px;
+      padding: 0.55rem 0.8rem;
+      border-radius: 999px;
+      color: #34443a;
+      font: 600 0.91rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
+      text-decoration: none;
+      transition: background-color 150ms ease, color 150ms ease;
+    }
+    nav ul a:hover, nav ul a:focus-visible { background: var(--green-light); color: var(--green-dark); text-decoration: none; }
+    .dropdown:hover .mega-menu, .dropdown:focus-within .mega-menu { display: block; }
+    .mega-menu { top: calc(100% - 1px); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+    .nav-menu-toggle { display: none; }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(250px, 0.85fr);
+      align-items: center;
+      gap: clamp(2rem, 6vw, 5rem);
+      min-height: 590px;
+      max-width: none;
+      padding: clamp(4rem, 8vw, 7rem) max(1.25rem, calc((100% - var(--content-width)) / 2));
+      overflow: hidden;
+      text-align: left;
+      background:
+        radial-gradient(ellipse at 80% 18%, rgba(241, 189, 99, 0.19), transparent 30%),
+        radial-gradient(ellipse at 15% 90%, rgba(35, 116, 75, 0.09), transparent 35%),
+        linear-gradient(135deg, #f5faf6 0%, #fff 62%, #f1f7f2 100%);
+    }
+    .hero-copy { position: relative; z-index: 1; max-width: 680px; }
+    .hero-eyebrow {
+      display: inline-flex;
+      margin-bottom: 1rem;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid #d7e8db;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--green-dark);
+      font-size: 0.8rem;
+      font-weight: 750;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      max-width: 13ch;
+      margin: 0 0 1rem;
+      color: var(--green-dark);
+      font-size: clamp(2.65rem, 5.5vw, 4.6rem);
+      font-weight: 750;
+      letter-spacing: -0.065em;
+      line-height: 1.04;
+    }
+    .hero p { max-width: 52ch; margin: 0 0 1.6rem; color: #526259; font-size: clamp(1rem, 1.5vw, 1.16rem); line-height: 1.75; }
+    .hero-search {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      max-width: 590px;
+      min-height: 66px;
+      margin: 0 0 1.1rem;
+      padding: 0.45rem;
+      border: 1px solid #dbe7de;
+      border-radius: var(--radius-md);
+      background: #fff;
+      box-shadow: 0 14px 36px rgba(23, 61, 44, 0.1);
+    }
+    .hero-search svg { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; margin-left: 0.75rem; color: #718078; }
+    .hero-search input {
+      width: 100%;
+      min-width: 0;
+      min-height: 48px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.98rem;
+    }
+    .hero-search input:focus-visible { outline: 0; box-shadow: none; }
+    .hero-search:focus-within { outline: 3px solid rgba(35, 116, 75, 0.22); outline-offset: 3px; }
+    .hero-search .button { flex: 0 0 auto; min-height: 48px; margin: 0; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .hero-actions .button { margin: 0; }
+    .hero-art { position: relative; display: grid; min-height: 340px; place-items: center; }
+    .hero-logo-card {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: min(100%, 360px);
+      min-height: 220px;
+      place-items: center;
+      align-content: center;
+      gap: 1rem;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 2rem;
+      background: rgba(255, 255, 255, 0.77);
+      box-shadow: 0 30px 70px rgba(23, 61, 44, 0.13);
+      transform: rotate(2deg);
+      backdrop-filter: blur(12px);
+    }
+    .hero .hero-logo-card img.hero-logo { display: block; width: 100%; height: auto; max-height: 120px; margin: 0; object-fit: contain; }
+    .hero-logo-card span { color: var(--green-dark); font-size: 0.92rem; font-weight: 650; letter-spacing: 0.02em; }
+    .hero-orbit { position: absolute; border: 1px solid rgba(35, 116, 75, 0.13); border-radius: 50%; }
+    .hero-orbit-one { width: 350px; height: 350px; }
+    .hero-orbit-two { width: 450px; height: 450px; }
+    .hero-art-dot { position: absolute; z-index: 2; width: 23px; height: 23px; border: 5px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 5px 15px rgba(23, 61, 44, 0.13); }
+    .hero-art-dot-one { top: 12%; right: 12%; }
+    .hero-art-dot-two { bottom: 10%; left: 8%; width: 16px; height: 16px; background: var(--green); }
+
+    section { max-width: var(--content-width); padding: clamp(3.25rem, 6vw, 5.5rem) clamp(1.2rem, 4vw, 2.4rem); }
+    section > h2, .library-heading h2 { font-size: clamp(1.9rem, 3vw, 2.7rem); font-weight: 720; letter-spacing: -0.045em; line-height: 1.15; }
+    section > p, section .highlight > p { color: var(--muted); }
+    .card {
+      border: 1px solid #e1e9e3;
+      border-top-width: 1px;
+      border-radius: var(--radius-md);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+    .grid { gap: 1.1rem; }
+    .grid .card h3 { color: var(--green-dark); font-size: 1.12rem; font-weight: 700; }
+    .grid .card p { color: var(--muted); }
+    .highlight { background: #edf5ef; }
+    .highlight > * { max-width: var(--content-width); }
+    #account.highlight { background: #fff; }
+    #account > p:first-of-type { max-width: 720px; }
+    #library { max-width: var(--content-width); scroll-margin-top: 5.5rem; }
+    .library-heading { margin-bottom: 1.4rem; }
+    .library-eyebrow { padding: 0.35rem 0.8rem; border: 1px solid #dbe9de; background: #eff7f1; font-family: inherit; letter-spacing: 0.08em; }
+    .library-heading > p { max-width: 680px; margin: 0.8rem auto 0; font-size: 1.04rem; line-height: 1.7; }
+    .category-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.55rem; margin: 1.25rem auto; }
+    .category-links button {
+      min-height: 40px;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid #dbe7de;
+      border-radius: 999px;
+      background: #fff;
+      color: #405248;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 620;
+      transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+    }
+    .category-links button:hover, .category-links button[aria-pressed="true"] { border-color: #a9cbb2; background: var(--green-light); color: var(--green-dark); }
+    .marketplace-tools {
+      gap: 1rem;
+      margin-top: 1.6rem;
+      padding: clamp(1rem, 2.5vw, 1.5rem);
+      border-color: #e0e9e2;
+      border-radius: var(--radius-lg);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+    .marketplace-tools label { color: #3e5045; font-family: inherit; font-size: 0.84rem; font-weight: 680; }
+    .marketplace-tools input, .marketplace-tools select, #admin input:not([type="checkbox"]), #admin select, #admin textarea,
+    #account input:not([type="checkbox"]), #lang-search {
+      min-height: 48px;
+      border-color: #d8e2db;
+      border-radius: 0.75rem;
+      font: 400 0.96rem/1.4 Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    .marketplace-tools input:focus, .marketplace-tools select:focus, #admin input:focus, #admin select:focus,
+    #admin textarea:focus, #account input:focus, #lang-search:focus {
+      outline: 3px solid rgba(35, 116, 75, 0.18);
+      outline-offset: 0;
+      border-color: var(--green);
+      box-shadow: 0 0 0 1px var(--green);
+    }
+    .search-control svg { color: #68786e; }
+    .currency-hint { color: #65736a; font-size: 0.84rem; }
+    .library-results-heading { margin-top: 2.4rem; }
+    .library-results-heading h3 { font-size: 1.4rem; font-weight: 720; letter-spacing: -0.025em; }
+    #catalog-results { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 1.1rem; }
+    .product-card {
+      min-height: 100%;
+      gap: 0.8rem;
+      padding: 1rem;
+      border: 1px solid #e2e9e3;
+      border-top: 1px solid #e2e9e3;
+      border-radius: var(--radius-md);
+      box-shadow: 0 6px 22px rgba(23, 61, 44, 0.045);
+    }
+    .product-card:hover { transform: translateY(-4px); border-color: #c8dbcc; box-shadow: var(--shadow-card); }
+    .product-card h3 { font-size: 1.12rem; font-weight: 700; line-height: 1.4; }
+    .product-card .product-preview, .account-resource-card .product-preview, .studio-product-card .product-preview {
+      width: 100%;
+      min-height: 0;
+      max-height: none;
+      aspect-ratio: 16 / 10;
+      border: 0;
+      border-radius: 0.75rem;
+      background: #f1f6f2;
+      object-fit: cover;
+    }
+    .product-cover-fallback { min-height: 150px; border-radius: 0.75rem; background: radial-gradient(circle at 85% 15%, #e2efe4, transparent 38%), linear-gradient(135deg, #f1f7f2, #e6f0e8); font-family: inherit; letter-spacing: 0.08em; }
+    .product-badge { padding: 0.27rem 0.7rem; border-color: #e4ebe5; background: #f7faf7; font: 620 0.76rem/1.35 Inter, ui-sans-serif, system-ui, sans-serif; }
+    .product-badge.price-badge { border-color: #d5e8d9; background: #edf7ef; }
+    .product-actions { align-items: center; gap: 0.5rem; }
+    .button {
+      min-height: 46px;
+      padding: 0.72rem 1.1rem;
+      border: 1px solid var(--green);
+      border-radius: 0.75rem;
+      background: var(--green);
+      box-shadow: 0 3px 9px rgba(23, 61, 44, 0.08);
+      color: #fff;
+      cursor: pointer;
+      font: 650 0.92rem/1.25 Inter, ui-sans-serif, system-ui, sans-serif;
+      text-align: center;
+      text-decoration: none;
+      transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+    .button:hover { border-color: var(--green-dark); background: var(--green-dark); box-shadow: 0 6px 15px rgba(23, 61, 44, 0.15); opacity: 1; transform: translateY(-1px); }
+    .button:active { transform: translateY(0); }
+    .button.secondary { border-color: #d9e5dc; background: #fff; box-shadow: none; color: var(--green-dark); }
+    .button.secondary:hover { border-color: #b7cfbd; background: #f1f7f2; color: var(--green-dark); }
+    .button:disabled { cursor: not-allowed; opacity: 0.65; transform: none; }
+    .catalog-status { border-color: #e0e9e2; border-radius: var(--radius-md); background: #fff; }
+    .catalog-status.state-empty, .catalog-status.state-disconnected { border-color: #e0e9e2; background: linear-gradient(145deg, #f1f7f2, #fff); }
+
+    #account, #admin { scroll-margin-top: 5.5rem; }
+    #account-auth { grid-template-columns: minmax(0, 540px); }
+    #account-auth .card, #account-verification, #account .account-panel, #admin .account-panel {
+      border: 1px solid #e1e9e3;
+      border-radius: var(--radius-lg);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+    #account-auth .card { border-top-width: 1px; }
+    #account-auth h3, #admin h3 { font-size: 1.2rem; font-weight: 720; }
+    #account-auth label, #account-settings-panel label, #admin label { color: #34463b; font-size: 0.91rem; font-weight: 650; }
+    #account input:not([type="checkbox"]) { margin-top: 0.4rem; }
+    .account-links button { min-height: 44px; border-radius: 0.75rem; font-family: inherit; font-weight: 650; }
+    .account-overview { gap: 1rem; }
+    .account-stat, .studio-stat { border-color: #e3ebe5; border-radius: var(--radius-md); background: #f9fbf9; }
+    .account-stat strong, .studio-stat strong { color: var(--green-dark); }
+    .account-subnav a { min-height: 42px; display: inline-flex; align-items: center; border-color: #dfe8e1; background: #fff; font-weight: 630; }
+    .account-panel { padding: clamp(1.1rem, 3vw, 1.6rem); }
+    .account-resource-card { border-color: #e2e9e3; border-radius: var(--radius-md); box-shadow: 0 4px 16px rgba(23, 61, 44, 0.04); }
+    .account-empty, .studio-empty { border: 1px dashed #d3e2d6; background: #f7faf7; }
+    .commerce-status { border-color: #dbe8de; border-radius: 0.75rem; background: #f2f8f3; }
+    .purchase-row { align-items: center; border-color: #e5ece6; }
+    .studio-overview { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 1rem; }
+    .studio-stat { padding: 1.25rem; }
+    .studio-stat strong { margin-bottom: 0.35rem; font: 750 1.8rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif; }
+    .studio-nav { gap: 0.55rem; }
+    .studio-nav button { min-height: 42px; }
+    .studio-nav button[aria-pressed="true"] { border-color: #b6d1bc; background: var(--green-light); box-shadow: inset 0 0 0 1px #d5e8d9; }
+    #admin-signin { max-width: 560px; padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid #e1e9e3; border-top-width: 1px; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); }
+    #admin-dashboard { display: grid; gap: 1rem; }
+    #admin-dashboard > .product-actions { padding: 1rem 1.2rem; border: 1px solid #e1e9e3; border-radius: var(--radius-md); background: #fff; }
+    #admin-product-form { padding: clamp(1.1rem, 3vw, 1.75rem); border: 1px solid #e1e9e3; border-top-width: 1px; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); }
+    #admin input:not([type="checkbox"]), #admin select, #admin textarea { margin-top: 0.4rem; border-radius: 0.75rem; }
+    #admin textarea { min-height: 140px; resize: vertical; }
+    #admin fieldset { border-color: #dfe8e1; border-radius: 0.75rem; }
+    #admin fieldset legend { padding: 0 0.35rem; color: #34463b; font-size: 0.9rem; font-weight: 650; }
+    .upload-progress { height: 0.65rem; border-radius: 999px; }
+    .studio-product-card { min-height: 100%; padding: 1.1rem; border-top-width: 1px; border-radius: var(--radius-md); box-shadow: 0 5px 18px rgba(23, 61, 44, 0.05); }
+    .studio-product-card h3 { overflow-wrap: anywhere; }
+    .studio-product-card .product-actions { margin-top: auto; padding-top: 0.5rem; }
+    .product-dialog { padding: clamp(1.1rem, 4vw, 2rem); border: 1px solid #dfe8e1; border-radius: var(--radius-lg); box-shadow: 0 24px 80px rgba(12, 34, 22, 0.24); }
+    .product-dialog::backdrop { background: rgba(12, 34, 22, 0.58); backdrop-filter: blur(3px); }
+    .product-dialog h2 { color: var(--green-dark); font-size: clamp(1.5rem, 4vw, 2rem); letter-spacing: -0.04em; }
+    .product-dialog-close, .close-btn { display: inline-grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; }
+    .product-dialog-close:hover, .close-btn:hover { background: var(--green-light); color: var(--green-dark); }
+    .modal { padding: 1rem; background: rgba(14, 31, 20, 0.55); backdrop-filter: blur(3px); }
+    .modal-content { width: min(100%, 760px); padding: clamp(1.1rem, 4vw, 2rem); border: 1px solid #e1e9e3; border-radius: var(--radius-lg); box-shadow: 0 24px 80px rgba(12, 34, 22, 0.2); }
+    .modal-header h2 { font-size: 1.5rem; letter-spacing: -0.03em; }
+    #lang-list button { min-height: 42px; border-radius: 0.7rem; }
+    footer { margin-top: 0; padding: 3rem 1.25rem; background: #163a29; color: #f4f8f5; }
+    footer img { height: 58px; padding: 7px; border-radius: 0.7rem; }
+    footer p { margin: 0.4rem 0; }
+    footer a { font-weight: 620; text-underline-offset: 0.2em; }
+
+    @media (max-width: 900px) {
+      .hero { min-height: 520px; grid-template-columns: minmax(0, 1.15fr) minmax(200px, 0.85fr); }
+      .hero-art { min-height: 280px; }
+      .hero-orbit-one { width: 280px; height: 280px; }
+      .hero-orbit-two { width: 360px; height: 360px; }
+      nav ul a { padding-inline: 0.6rem; font-size: 0.86rem; }
+    }
+    @media (max-width: 760px) {
+      nav { min-height: 70px; flex-wrap: wrap; gap: 0.5rem; padding-block: 0.65rem; }
+      .logo img { height: 40px; }
+      .nav-menu-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        min-height: 42px;
+        padding: 0.5rem 0.8rem;
+        border: 1px solid #dfe8e1;
+        border-radius: 0.75rem;
+        background: #fff;
+        color: var(--green-dark);
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 650;
+      }
+      .nav-menu-icon, .nav-menu-icon::before, .nav-menu-icon::after { display: block; width: 17px; height: 2px; border-radius: 2px; background: currentColor; }
+      .nav-menu-icon { position: relative; }
+      .nav-menu-icon::before, .nav-menu-icon::after { position: absolute; left: 0; content: ""; }
+      .nav-menu-icon::before { top: -5px; }
+      .nav-menu-icon::after { top: 5px; }
+      nav ul { display: none; flex: 1 0 100%; width: 100%; flex-direction: column; align-items: stretch; gap: 0.15rem; padding: 0.35rem 0 0.2rem; }
+      nav.nav-open ul { display: flex; }
+      nav ul a { width: 100%; min-height: 44px; border-radius: 0.65rem; padding-inline: 0.8rem; font-size: 0.94rem; }
+      .dropdown { position: relative; }
+      .mega-menu { position: static; display: none; width: 100%; padding: 1.25rem; border-radius: 0.75rem; }
+      .dropdown:hover .mega-menu, .dropdown:focus-within .mega-menu { display: block; }
+      .mega-content { flex-direction: column; gap: 1.5rem; }
+      .mega-left h2 { font-size: 1.6rem; }
+      .hero { grid-template-columns: minmax(0, 1fr); gap: 1rem; min-height: 0; padding-block: 4rem 3.5rem; }
+      .hero-copy { max-width: 680px; }
+      .hero h1 { max-width: 15ch; font-size: clamp(2.5rem, 9vw, 3.8rem); }
+      .hero-art { min-height: 220px; }
+      .hero-logo-card { width: min(75%, 320px); min-height: 160px; padding: 1.25rem; border-radius: 1.35rem; }
+      .hero .hero-logo-card img.hero-logo { max-height: 88px; }
+      .hero-orbit-one { width: 220px; height: 220px; }
+      .hero-orbit-two { width: 290px; height: 290px; }
+      section { padding-block: 3.25rem; }
+    }
+    @media (max-width: 520px) {
+      .hero { padding: 3.25rem 1.15rem 2.75rem; }
+      .hero h1 { font-size: clamp(2.3rem, 11vw, 3rem); }
+      .hero p { margin-bottom: 1.25rem; font-size: 1rem; }
+      .hero-search { min-height: 58px; gap: 0.25rem; padding: 0.35rem; }
+      .hero-search svg { margin-left: 0.5rem; }
+      .hero-search input { font-size: 0.9rem; }
+      .hero-search .button { min-height: 44px; padding-inline: 0.75rem; font-size: 0.85rem; }
+      .hero-actions { display: grid; grid-template-columns: 1fr; }
+      .hero-actions .button { width: 100%; }
+      .hero-art { min-height: 190px; }
+      .hero-logo-card { width: min(78%, 290px); min-height: 145px; }
+      .marketplace-tools { grid-template-columns: minmax(0, 1fr); gap: 0.8rem; padding: 1rem; }
+      .marketplace-tools .search-field, .marketplace-tools .category-field, .currency-hint { grid-column: auto; }
+      .filter-actions { grid-column: 1 / -1; }
+      #catalog-results { grid-template-columns: minmax(0, 1fr); }
+      .product-actions .button { flex: 1 1 auto; }
+      #account-auth, .account-overview { grid-template-columns: minmax(0, 1fr); }
+      .account-links { display: grid; grid-template-columns: 1fr; }
+      .purchase-row { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
+      .studio-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .studio-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .studio-nav button { padding-inline: 0.45rem; font-size: 0.82rem; }
+      #admin-dashboard > .product-actions { align-items: stretch; }
+      #admin-dashboard > .product-actions h3 { flex-basis: 100%; }
+      #admin-dashboard > .product-actions .button { flex: 1 1 auto; }
+      #admin-product-form .product-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+      #admin-product-form .product-actions .button { width: 100%; }
+      .account-subnav { display: grid; grid-template-columns: 1fr 1fr; }
+      .account-subnav a:last-child { grid-column: 1 / -1; }
+      .library-results-heading { align-items: flex-start; flex-direction: column; gap: 0.2rem; }
+      .modal-content { max-height: calc(100dvh - 2rem); padding: 1rem; }
+      #lang-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 135px), 1fr)); }
+    }
+    @media (max-width: 350px) {
+      nav { padding-inline: 0.85rem; }
+      .hero-search .button { padding-inline: 0.55rem; }
+      .studio-overview, .studio-nav { grid-template-columns: minmax(0, 1fr); }
+      .filter-actions { flex-wrap: wrap; }
+      .filter-actions .button { flex-basis: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
 </head>
 <body>
 
-  <nav>
+  <nav aria-label="Primary navigation">
     <a href="#top" class="logo" aria-label="BookWell home">
       <img src="bookwell-logo-full.png" alt="BookWell logo">
     </a>
-    <ul>
+    <button id="nav-menu-toggle" class="nav-menu-toggle" type="button" aria-controls="primary-nav" aria-expanded="false">
+      <span class="nav-menu-icon" aria-hidden="true"></span>
+      <span>Menu</span>
+    </button>
+    <ul id="primary-nav">
       <li class="dropdown">
         <a href="#about" class="dropbtn">About Us ▾</a>
         <div class="mega-menu">
@@ -526,11 +928,34 @@
   </div>
 
   <header class="hero" id="top">
-    <img class="hero-logo" src="bookwell-logo-full.png" alt="BookWell">
-    <h1>Free, openly licensed books for students worldwide</h1>
-    <p>BookWell gathers free and openly licensed learning resources, organized by class, subject, and language, so students everywhere can learn without barriers.</p>
-    <a href="#library" class="button">Browse the Library</a>
-    <a href="#volunteer" class="button secondary">Volunteer With Us</a>
+    <div class="hero-copy">
+      <span class="hero-eyebrow">A world of learning</span>
+      <h1>Find your next great learning resource.</h1>
+      <p>Explore thoughtfully organized books and digital learning materials by subject, format, and language.</p>
+      <form id="hero-search-form" class="hero-search" role="search">
+        <label class="visually-hidden" for="hero-search">Search the BookWell library</label>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+          <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.8"></circle>
+          <path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+        </svg>
+        <input id="hero-search" type="search" placeholder="Search by subject or topic" autocomplete="off">
+        <button class="button" type="submit">Search</button>
+      </form>
+      <div class="hero-actions">
+        <a href="#library" class="button">Browse the Library</a>
+        <a href="#volunteer" class="button secondary">Volunteer With Us</a>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="hero-orbit hero-orbit-one"></div>
+      <div class="hero-orbit hero-orbit-two"></div>
+      <div class="hero-logo-card">
+        <img class="hero-logo" src="bookwell-logo-full.png" alt="">
+        <span>Knowledge for every learner</span>
+      </div>
+      <span class="hero-art-dot hero-art-dot-one"></span>
+      <span class="hero-art-dot hero-art-dot-two"></span>
+    </div>
   </header>
 
   <section id="mission">
@@ -562,6 +987,7 @@
       <h2>The Library</h2>
       <p>Discover thoughtful learning resources for curious minds everywhere. Explore by subject, format, and price, then find the right resource for your next step.</p>
     </div>
+    <div id="catalog-category-links" class="category-links" role="group" aria-label="Browse by category" hidden></div>
     <form class="marketplace-tools" id="catalog-filters" role="search">
       <label class="search-field">
         Search resources
@@ -886,6 +1312,30 @@
   <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   
   <script>
+    const navToggle = document.getElementById('nav-menu-toggle');
+    const primaryNav = document.getElementById('primary-nav');
+    const primaryNavContainer = document.querySelector('nav[aria-label="Primary navigation"]');
+
+    function closePrimaryNav() {
+      primaryNavContainer.classList.remove('nav-open');
+      navToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    navToggle.addEventListener('click', () => {
+      const isExpanded = navToggle.getAttribute('aria-expanded') === 'true';
+      navToggle.setAttribute('aria-expanded', String(!isExpanded));
+      primaryNavContainer.classList.toggle('nav-open', !isExpanded);
+    });
+    primaryNav.addEventListener('click', (event) => {
+      if (event.target.closest('a')) closePrimaryNav();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && navToggle.getAttribute('aria-expanded') === 'true') {
+        closePrimaryNav();
+        navToggle.focus();
+      }
+    });
+
     let availableLanguages = [];
     const langBtn = document.getElementById('lang-btn');
     const langModal = document.getElementById('lang-modal');

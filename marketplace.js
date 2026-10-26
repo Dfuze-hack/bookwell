@@ -7,8 +7,11 @@
   const config = window.BOOKWELL_CONFIG || {};
   const elements = {
     form: document.getElementById("catalog-filters"),
+    heroForm: document.getElementById("hero-search-form"),
+    heroSearch: document.getElementById("hero-search"),
     search: document.getElementById("catalog-search"),
     category: document.getElementById("catalog-category"),
+    categoryLinks: document.getElementById("catalog-category-links"),
     price: document.getElementById("catalog-price"),
     format: document.getElementById("catalog-format"),
     minPrice: document.getElementById("catalog-min-price"),
@@ -412,11 +415,37 @@
     });
     if (!response.ok) throw new Error("Categories could not be loaded.");
     const categories = await response.json();
+    elements.categoryLinks.replaceChildren();
+    if (categories.length) {
+      const allButton = document.createElement("button");
+      allButton.type = "button";
+      allButton.textContent = "All topics";
+      allButton.dataset.categorySlug = "";
+      allButton.setAttribute("aria-pressed", "true");
+      elements.categoryLinks.appendChild(allButton);
+      categories.forEach(function (category) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = category.name;
+        button.dataset.categorySlug = category.slug;
+        button.setAttribute("aria-pressed", "false");
+        elements.categoryLinks.appendChild(button);
+      });
+      elements.categoryLinks.hidden = false;
+    } else {
+      elements.categoryLinks.hidden = true;
+    }
     categories.forEach(function (category) {
       const option = document.createElement("option");
       option.value = category.slug;
       option.textContent = category.name;
       elements.category.appendChild(option);
+    });
+  }
+
+  function syncCategoryLinks() {
+    elements.categoryLinks.querySelectorAll("button").forEach(function (button) {
+      button.setAttribute("aria-pressed", String(button.dataset.categorySlug === elements.category.value));
     });
   }
 
@@ -515,6 +544,20 @@
     window.clearTimeout(debounceTimer);
     loadProducts(false);
   });
+  elements.heroForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    elements.search.value = elements.heroSearch.value.trim();
+    window.location.hash = "#library";
+    loadProducts(false);
+    elements.search.focus();
+  });
+  elements.categoryLinks.addEventListener("click", function (event) {
+    const button = event.target.closest("button[data-category-slug]");
+    if (!button) return;
+    elements.category.value = button.dataset.categorySlug;
+    syncCategoryLinks();
+    loadProducts(false);
+  });
   elements.form.addEventListener("input", function (event) {
     if (event.target === elements.search || event.target === elements.minPrice || event.target === elements.maxPrice) {
       window.clearTimeout(debounceTimer);
@@ -522,7 +565,10 @@
     }
   });
   elements.form.addEventListener("change", function (event) {
-    if (event.target !== elements.search) loadProducts(false);
+    if (event.target !== elements.search) {
+      syncCategoryLinks();
+      loadProducts(false);
+    }
   });
   function updatePriceSteps() {
     if (!elements.currency.value) {
