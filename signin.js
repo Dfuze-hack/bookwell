@@ -15,6 +15,7 @@
     verify: document.getElementById("account-verification"),
     verificationResend: document.getElementById("account-verification-resend")
   };
+  let recovering = false;
 
   function setStatus(message, isError) {
     elements.status.textContent = message;
@@ -49,6 +50,48 @@
     return new URL("signin.html", window.location.href).href;
   }
 
+  function recoveryUrl() {
+    return core.recoveryRedirectUrl(window.location.href);
+  }
+
+  function isRecoveryRequest() {
+    return core.isRecoveryRequest(window.location.search);
+  }
+
+  function markRecoveryUrl() {
+    if (isRecoveryRequest()) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("recovery", "1");
+    window.history.replaceState(window.history.state, "", url.toString());
+  }
+
+  function clearRecoveryUrl() {
+    const url = new URL(window.location.href);
+    ["recovery", "code", "error", "error_code", "error_description"].forEach((key) => {
+      url.searchParams.delete(key);
+    });
+    window.history.replaceState(window.history.state, "", url.toString());
+  }
+
+  function showRecoveryForm() {
+    if (recovering) return;
+    recovering = true;
+    markRecoveryUrl();
+    elements.verify.hidden = true;
+    showAuthForm(elements.reset);
+    const input = elements.reset.querySelector("input");
+    if (input) input.focus();
+    setStatus("Choose a new password for your account.", false);
+  }
+
+  function showRecoveryError() {
+    recovering = false;
+    clearRecoveryUrl();
+    elements.verify.hidden = true;
+    showAuthForm(elements.signIn);
+    setStatus("This password-reset link is invalid or has expired. Request a new link and try again.", true);
+  }
+
   function friendlyError(error) {
     const message = String(error?.message || "");
     if (/email not confirmed|verify.*email|email.*verif/i.test(message)) {
@@ -56,6 +99,9 @@
       return "Please verify your email address before signing in. You can request a new verification email below.";
     }
     if (/invalid login credentials/i.test(message)) return "The email or password was not recognized.";
+    if (/invalid or has expired|auth session missing|invalid.*(?:token|session)|token.*expired|code verifier/i.test(message)) {
+      return "This password-reset link is invalid or has expired. Request a new link and try again.";
+    }
     if (/rate limit|too many requests/i.test(message)) return "Too many attempts. Please wait a little before trying again.";
     if (/password should be at least|password.*characters/i.test(message)) return "Choose a longer password that meets the project's password requirements.";
     return message || "This account request could not be completed. Please try again.";
@@ -137,7 +183,7 @@
     setBusy(elements.forgot, true, "Sending instructions…");
     setStatus("Sending password-reset instructions…", false);
     try {
-      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl() });
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: recoveryUrl() });
       if (error) throw error;
       setStatus("If an account exists for that address, password-reset instructions have been sent.", false);
     } catch (error) {
@@ -155,17 +201,22 @@
       setStatus("The passwords do not match.", true);
       return;
     }
+    let updated = false;
     setBusy(elements.reset, true, "Updating password…");
     try {
       const { error } = await client.auth.updateUser({ password: String(data.get("password")) });
       if (error) throw error;
+      updated = true;
+      recovering = false;
       elements.reset.reset();
+      clearRecoveryUrl();
+      setBusy(elements.reset, true, "Password updated");
       setStatus("Your password was updated. Returning to BookWell…", false);
-      window.location.replace(homepageUrl());
+      window.setTimeout(() => window.location.replace(homepageUrl()), 1200);
     } catch (error) {
       setStatus(friendlyError(error), true);
     } finally {
-      setBusy(elements.reset, false);
+      if (!updated) setBusy(elements.reset, false);
     }
   }
 
@@ -224,13 +275,22 @@
   } else {
     setStatus("Your BookWell account keeps saved resources and your personal library together.", false);
     client.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" && session) {
-        elements.verify.hidden = true;
-        showAuthForm(elements.reset);
-        setStatus("Choose a new password for your account.", false);
+      const recovery = core.recoveryState(event, session, isRecoveryRequest());
+      if (recovery === "reset") {
+        showRecoveryForm();
+        return;
+      }
+      if (recovery === "invalid") {
+        showRecoveryError();
+        return;
+      }
+      if (recovery === "pending") return;
+      if (event === "SIGNED_OUT" && recovering) {
+        showRecoveryError();
         return;
       }
       if (event === "INITIAL_SESSION" && session?.user) {
+        if (recovering) return;
         if (core.isEmailVerified(session.user)) {
           window.location.replace(homepageUrl());
         } else {

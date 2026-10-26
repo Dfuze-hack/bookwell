@@ -164,13 +164,92 @@
     return Boolean(response) && [400, 401, 403].includes(response.status);
   }
 
+  function productAccessDecision(product, access) {
+    const settings = access || {};
+    const signedIn = settings.signedIn === true;
+    const ownershipReady = settings.status === "ready";
+    const owned = signedIn && ownershipReady &&
+      typeof settings.isOwned === "function" &&
+      typeof product?.id === "string" && settings.isOwned(product.id) === true;
+
+    if (owned) {
+      return { state: "owned", action: "download", label: "Download", badge: "In your library", disabled: false };
+    }
+    if (product?.price_minor === 0) {
+      return { state: "free", action: "download", label: "Download", badge: null, disabled: false };
+    }
+    if (!signedIn) {
+      return { state: "signed_out", action: "signin", label: "Sign in to buy", badge: null, disabled: false };
+    }
+    if (settings.status === "loading") {
+      return { state: "checking", action: null, label: "Checking access…", badge: null, disabled: true };
+    }
+    const checked = typeof settings.isChecked === "function" &&
+      typeof product?.id === "string" && settings.isChecked(product.id) === true;
+    if (!ownershipReady || (settings.complete === false && !checked)) {
+      return {
+        state: ownershipReady ? "unchecked" : "error",
+        action: ownershipReady ? "check" : "retry",
+        label: ownershipReady ? "Check access" : "Retry access",
+        badge: null,
+        disabled: false
+      };
+    }
+    return { state: "available", action: "buy", label: "Buy", badge: null, disabled: false };
+  }
+
+  function renderCataloguePage(products, pageSize, renderProduct) {
+    if (!Array.isArray(products) || typeof renderProduct !== "function") return 0;
+    const page = products.slice(0, pageSize);
+    page.forEach(function (product) {
+      renderProduct(product);
+    });
+    return page.length;
+  }
+
+  async function runCatalogueStartup(tasks) {
+    const options = tasks || {};
+    const result = {
+      facets: { status: "skipped" },
+      catalogue: { status: "skipped" },
+      discovery: { status: "skipped" },
+      recentlyViewed: { status: "skipped" }
+    };
+
+    async function runOptional(key, task) {
+      if (typeof task !== "function") return;
+      try {
+        await task();
+        result[key] = { status: "loaded" };
+      } catch (error) {
+        result[key] = { status: "failed", error: error };
+      }
+    }
+
+    await runOptional("facets", options.loadFacets);
+    try {
+      const catalogueResult = await options.loadCatalogue();
+      result.catalogue = catalogueResult === false
+        ? { status: "failed" }
+        : { status: "loaded" };
+    } catch (error) {
+      result.catalogue = { status: "failed", error: error };
+    }
+    await runOptional("discovery", options.loadDiscovery);
+    await runOptional("recentlyViewed", options.loadRecentlyViewed);
+    return result;
+  }
+
   const api = {
     buildSearchParameters: buildSearchParameters,
     formatPrice: formatPrice,
     amountFromMinor: amountFromMinor,
     priceMinor: priceMinor,
+    productAccessDecision: productAccessDecision,
     rankRecommendations: rankRecommendations,
     relatedProducts: relatedProducts,
+    renderCataloguePage: renderCataloguePage,
+    runCatalogueStartup: runCatalogueStartup,
     shouldRefreshDownload: shouldRefreshDownload,
     signedPreviewUrl: signedPreviewUrl,
     validateCatalogueRows: validateCatalogueRows

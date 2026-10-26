@@ -60,6 +60,7 @@
   let discoveryLoaded = false;
   let recentlyViewedRequestId = 0;
   let categories = [];
+  const productCache = new Map();
 
   function isAllowedSupabaseUrl(value) {
     try {
@@ -174,7 +175,96 @@
   }
 
   function addBadge(parent, label, extraClass) {
-    addText(parent, "span", label, "product-badge" + (extraClass ? " " + extraClass : ""));
+    return addText(parent, "span", label, "product-badge" + (extraClass ? " " + extraClass : ""));
+  }
+
+  function accessSnapshot() {
+    return window.BookWellAccount?.accessSnapshot?.() || {
+      signedIn: false,
+      status: "signed_out",
+      complete: true,
+      isChecked: () => false,
+      isOwned: () => false
+    };
+  }
+
+  function applyAccessPresentation(container, product, badge) {
+    const decision = core.productAccessDecision(product, accessSnapshot());
+    container?.classList.toggle("is-owned", decision.state === "owned");
+    if (badge) badge.hidden = decision.badge !== "In your library";
+    const actions = container?.querySelector("[data-product-access-actions]");
+    if (actions) renderAccessActions(product, actions, container === elements.dialogContent);
+    return decision;
+  }
+
+  function syncProductAccess() {
+    document.querySelectorAll("[data-product-id]").forEach(function (card) {
+      const product = productCache.get(card.dataset.productId);
+      if (!product) return;
+      applyAccessPresentation(card, product, card.querySelector("[data-product-ownership-badge]"));
+    });
+    document.querySelectorAll("[data-product-ownership-badge]").forEach(function (badge) {
+      if (badge.closest("[data-product-id]")) return;
+      const product = productCache.get(badge.dataset.productOwnershipBadge);
+      if (!product) return;
+      const decision = core.productAccessDecision(product, accessSnapshot());
+      badge.hidden = decision.badge !== "In your library";
+      const actions = badge.parentElement?.querySelector("[data-product-access-actions]");
+      if (actions) renderAccessActions(product, actions, true);
+    });
+  }
+
+  function renderAccessActions(product, container, detail) {
+    const decision = core.productAccessDecision(product, accessSnapshot());
+    container.replaceChildren();
+    container.dataset.accessState = decision.state;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = decision.action === "buy" && detail
+      ? "Buy " + money(product)
+      : decision.label;
+    button.className = decision.action === "check" || decision.action === "retry"
+      ? "button secondary"
+      : "button";
+    if (decision.disabled) {
+      button.disabled = true;
+      container.appendChild(button);
+      return;
+    }
+    if (decision.action === "download") {
+      button.addEventListener("click", function () {
+        downloadProduct(product);
+      });
+    } else if (decision.action === "buy" || decision.action === "signin") {
+      button.addEventListener("click", function () {
+        purchaseProduct(product, button);
+      });
+    } else if (decision.action === "check") {
+      button.addEventListener("click", async function () {
+        button.disabled = true;
+        button.textContent = "Checking access…";
+        try {
+          await window.BookWellAccount?.checkProductAccess(product.id);
+        } catch (error) {
+          setStatus(error.message || "Your access could not be checked. Please retry.", true);
+        } finally {
+          syncProductAccess();
+        }
+      });
+    } else if (decision.action === "retry") {
+      button.addEventListener("click", async function () {
+        button.disabled = true;
+        button.textContent = "Retrying access…";
+        try {
+          await window.BookWellAccount?.refreshAccess();
+        } catch (error) {
+          setStatus(error.message || "Your access could not be refreshed. Please retry.", true);
+        } finally {
+          syncProductAccess();
+        }
+      });
+    }
+    container.appendChild(button);
   }
 
   function saveButton(product) {
@@ -217,11 +307,27 @@
     );
   }
 
+  function replacePreviewWithFallback(image) {
+    if (!image || !image.parentNode) return;
+    const fallback = document.createElement("div");
+    fallback.className = "product-cover-fallback";
+    fallback.setAttribute("role", "img");
+    fallback.setAttribute("aria-label", "Preview image unavailable");
+    fallback.textContent = "Preview unavailable";
+    image.replaceWith(fallback);
+  }
+
   function showPreview(image, previewPath) {
-    if (typeof previewPath !== "string") return;
+    if (!image) return;
+    if (typeof previewPath !== "string") {
+      replacePreviewWithFallback(image);
+      return;
+    }
+    image.addEventListener("error", function () {
+      replacePreviewWithFallback(image);
+    }, { once: true });
     setPreviewSource(image, previewPath).catch(function () {
-      image.alt = "Preview image unavailable";
-      setStatus("A preview image could not be loaded. The product listing remains available.", true);
+      replacePreviewWithFallback(image);
     });
   }
 
@@ -230,6 +336,8 @@
     const card = document.createElement("article");
     card.className = "card product-card";
     card.dataset.slug = product.slug;
+    card.dataset.productId = product.id;
+    productCache.set(product.id, product);
     const title = document.createElement("h3");
     title.textContent = product.title;
     if (typeof product.preview_path === "string") {
@@ -253,6 +361,9 @@
     if (typeof product.language === "string" && product.language.trim()) addBadge(metadata, product.language);
     if (product.formats.length) addBadge(metadata, product.formats[0]);
     if (product.included_with_premium) addBadge(metadata, "Premium included");
+    const ownedBadge = addBadge(metadata, "In your library", "product-badge-owned");
+    ownedBadge.dataset.productOwnershipBadge = product.id;
+    ownedBadge.hidden = true;
     card.appendChild(metadata);
     if (target === elements.recentlyAdded && product.created_at) {
       const createdAt = Date.parse(product.created_at);
@@ -276,30 +387,17 @@
     });
     actions.appendChild(details);
     actions.appendChild(saveButton(product));
-    if (product.price_minor === 0) {
-      const download = document.createElement("button");
-      download.type = "button";
-      download.className = "button";
-      download.textContent = "Download";
-      download.addEventListener("click", function () {
-        downloadProduct(product);
-      });
-      actions.appendChild(download);
-    } else {
-      const buy = document.createElement("button");
-      buy.type = "button";
-      buy.className = "button";
-      buy.textContent = "Buy";
-      buy.addEventListener("click", function () {
-        purchaseProduct(product, buy);
-      });
-      actions.appendChild(buy);
-    }
+    const accessActions = document.createElement("div");
+    accessActions.className = "product-access-actions";
+    accessActions.dataset.productAccessActions = product.id;
+    actions.appendChild(accessActions);
     card.appendChild(actions);
+    applyAccessPresentation(card, product, ownedBadge);
     destination.appendChild(card);
   }
 
   function renderDetail(product) {
+    productCache.set(product.id, product);
     elements.dialogContent.replaceChildren();
     const heading = addText(elements.dialogContent, "h2", product.title);
     heading.id = "product-dialog-title";
@@ -327,33 +425,25 @@
       addText(elements.dialogContent, "p", "Last updated: " + new Date(product.updated_at).toLocaleDateString());
     }
     if (product.included_with_premium) addBadge(elements.dialogContent, "Included with BookWell Premium");
+    const ownedBadge = addBadge(elements.dialogContent, "In your library", "product-badge-owned");
+    ownedBadge.dataset.productOwnershipBadge = product.id;
     const tags = document.createElement("p");
     tags.textContent = "Tags: " + product.tags.join(", ");
     elements.dialogContent.appendChild(tags);
+    if (product.price_minor > 0) {
+      addText(elements.dialogContent, "p", "One-time access to this resource. The private file becomes available only after BookWell verifies current access.");
+    }
     const saveActions = document.createElement("div");
     saveActions.className = "product-actions";
     saveActions.appendChild(saveButton(product));
+    const accessActions = document.createElement("div");
+    accessActions.className = "product-access-actions";
+    accessActions.dataset.productAccessActions = product.id;
+    saveActions.appendChild(accessActions);
     elements.dialogContent.appendChild(saveActions);
-    if (product.price_minor === 0) {
-      const download = document.createElement("button");
-      download.type = "button";
-      download.className = "button";
-      download.textContent = "Download free resource";
-      download.addEventListener("click", function () {
-        downloadProduct(product);
-      });
-      elements.dialogContent.appendChild(download);
-    } else {
-      addText(elements.dialogContent, "p", "One-time access to this resource. The private file becomes available only after BookWell verifies payment.");
-      const buy = document.createElement("button");
-      buy.type = "button";
-      buy.className = "button";
-      buy.textContent = "Buy " + money(product);
-      buy.addEventListener("click", function () {
-        purchaseProduct(product, buy);
-      });
-      elements.dialogContent.appendChild(buy);
-    }
+    const decision = core.productAccessDecision(product, accessSnapshot());
+    ownedBadge.hidden = decision.badge !== "In your library";
+    renderAccessActions(product, accessActions, true);
     const related = document.createElement("section");
     related.id = "product-related";
     const relatedTitle = addText(related, "h3", "Related resources");
@@ -438,14 +528,15 @@
     }
   }
 
-  async function downloadProduct(product) {
+  async function downloadProduct(product, options) {
+    const reportStatus = typeof options?.onStatus === "function" ? options.onStatus : setStatus;
     if (downloading) return;
     if (!configured()) {
-      setStatus("Downloads are unavailable until the BookWell catalog and secure-download service are configured.", true);
+      reportStatus("Downloads are unavailable until the BookWell catalog and secure-download service are configured.", true);
       return;
     }
     downloading = true;
-    setStatus("Checking download access…", false);
+    reportStatus("Checking download access…", false);
     try {
       async function getSignedDownloadUrl() {
         const accessToken = await window.BookWellAccountClient?.getAccessToken();
@@ -466,7 +557,9 @@
         }
         if (!response.ok || typeof result.url !== "string" ||
             !["pdf", "zip", "docx", "pptx", "xlsx"].includes(result.extension)) {
-          throw new Error(result.error || "This download is not available for your account.");
+          const error = new Error(result.error || "This download is not available for your account.");
+          error.accessDenied = response.status === 401 || response.status === 403;
+          throw error;
         }
         return { url: result.url, extension: result.extension };
       }
@@ -488,9 +581,13 @@
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-      clearStatus();
+      if (typeof options?.onStatus === "function") reportStatus("", false);
+      else clearStatus();
     } catch (error) {
-      setStatus(error.message || "The download failed. Please retry.", true);
+      if (error?.accessDenied && window.BookWellAccount?.accessSnapshot?.().signedIn) {
+        window.BookWellAccount.refreshAccess().catch(() => {});
+      }
+      reportStatus(error.message || "The download failed. Please retry.", true);
     } finally {
       downloading = false;
     }
@@ -539,7 +636,8 @@
       }
       if (!response.ok) {
         if (result.code === "already_owned" || result.status === "already_owned") {
-          setStatus("You already have access to this resource. It is available in My Library.", false);
+          window.BookWellAccount?.refreshAccess?.().catch(() => {});
+          setStatus("You already have access to this resource. Download it here or from My Library.", false);
           return;
         }
         throw new Error(result.error || "Secure checkout is currently unavailable. No payment has been taken.");
@@ -567,6 +665,11 @@
     if (!Array.isArray(categories) || !Array.isArray(languages)) {
       throw new Error("The catalog returned invalid discovery filters.");
     }
+    elements.category.disabled = false;
+    elements.language.disabled = false;
+    elements.interestSave.disabled = false;
+    elements.interestClear.disabled = false;
+    elements.featuredEmptyState.textContent = "Subject collections will appear here when the public library is connected.";
     while (elements.category.options.length > 1) elements.category.remove(1);
     while (elements.language.options.length > 1) elements.language.remove(1);
     elements.categoryLinks.replaceChildren();
@@ -855,9 +958,9 @@
       elements.diagnosticText.textContent = hasValues
         ? "Catalogue diagnostics: the configured Supabase URL or public anon key is invalid or incomplete."
         : "Catalogue diagnostics: no Supabase project URL/public anon key is configured. No sample products are displayed.";
-      return;
+      return false;
     }
-    if (append && loadingMore) return;
+    if (append && loadingMore) return false;
     if (!append) offset = 0;
     const currentRequest = ++requestId;
     let parameters;
@@ -879,7 +982,7 @@
       elements.diagnostics.hidden = false;
       elements.diagnosticText.textContent = error.message;
       elements.retry.hidden = true;
-      return;
+      return false;
     }
     if (!append) {
       elements.results.replaceChildren();
@@ -903,11 +1006,11 @@
       });
       if (!response.ok) throw new Error("The product catalog could not be loaded.");
       const products = core.validateCatalogueRows(await response.json());
-      if (currentRequest !== requestId) return;
+      if (currentRequest !== requestId) return true;
       const hasMore = products.length > PAGE_SIZE;
-      products.slice(0, PAGE_SIZE).forEach(renderProduct);
+      const renderedCount = core.renderCataloguePage(products, PAGE_SIZE, renderProduct);
       if (discoveryLoaded) renderDiscoverySections();
-      offset += Math.min(products.length, PAGE_SIZE);
+      offset += renderedCount;
       elements.results.hidden = elements.results.childElementCount === 0;
       elements.more.hidden = !hasMore;
       if (offset === 0) {
@@ -921,11 +1024,13 @@
       } else {
         clearStatus();
       }
+      return true;
     } catch (error) {
-      if (currentRequest !== requestId) return;
+      if (currentRequest !== requestId) return false;
       setStatus("We couldn’t load the library just now. Check your connection and try again.", true, "error");
       elements.diagnostics.hidden = false;
       elements.diagnosticText.textContent = error.message || "The catalogue request failed.";
+      return false;
     } finally {
       if (append) {
         loadingMore = false;
@@ -1021,6 +1126,50 @@
     if (match) openProductSlug(match[1]);
   });
 
+  function showFacetFallback() {
+    categories = [];
+    while (elements.category.options.length > 1) elements.category.remove(1);
+    while (elements.language.options.length > 1) elements.language.remove(1);
+    elements.category.value = "";
+    elements.language.value = "";
+    elements.category.disabled = true;
+    elements.language.disabled = true;
+    elements.categoryLinks.replaceChildren();
+    elements.categoryLinks.hidden = true;
+    elements.heroTopics.hidden = true;
+    elements.featuredCategoryLinks.replaceChildren();
+    elements.featuredCategoryLinks.hidden = true;
+    elements.featuredEmptyState.textContent = "Subject collections are temporarily unavailable. Search the catalogue below.";
+    elements.featuredEmptyState.hidden = false;
+    elements.interestOptions.replaceChildren();
+    addText(elements.interestOptions, "p", "Subject interests are temporarily unavailable.", "discovery-empty");
+    elements.interestSave.disabled = true;
+    elements.interestClear.disabled = true;
+    elements.preferenceStatus.textContent = "Subject and language filters are temporarily unavailable. Search, price, and format filters still work.";
+    renderActiveFilters();
+  }
+
+  function showDiscoveryFallback() {
+    elements.discoveryStatus.textContent = "Personalized recommendations are temporarily unavailable. The main catalogue and search still work.";
+    elements.recommendations.replaceChildren();
+    elements.recommendations.hidden = true;
+    elements.recommendationsEmpty.textContent = "Recommendations are temporarily unavailable.";
+    elements.recommendationsEmpty.hidden = false;
+    elements.recentlyAdded.replaceChildren();
+    elements.recentlyAdded.hidden = true;
+    elements.recentlyAddedEmpty.textContent = "Recently added recommendations are temporarily unavailable.";
+    elements.recentlyAddedEmpty.hidden = false;
+  }
+
+  function showRecentlyViewedFallback() {
+    elements.recentlyViewed.replaceChildren();
+    elements.recentlyViewed.hidden = true;
+    elements.recentlyViewedEmpty.textContent = "Recently viewed listings are temporarily unavailable.";
+    elements.recentlyViewedEmpty.hidden = false;
+  }
+
+  window.addEventListener("bookwell:accesschange", syncProductAccess);
+
   async function initializeCatalog() {
     if (!configured()) {
       loadProducts(false);
@@ -1033,17 +1182,32 @@
       elements.recentlyAddedEmpty.hidden = false;
       return;
     }
-    try {
-      await loadCategories();
-      await loadProducts(false);
-      if (!discoveryLoaded) await loadDiscoveryCatalog();
-      await loadRecentlyViewed();
-    } catch (error) {
-      setStatus("We couldn’t connect to the resource library. Please try again in a moment.", true, "error");
+
+    const startup = await core.runCatalogueStartup({
+      loadFacets: async function () {
+        try {
+          await loadCategories();
+        } catch (error) {
+          showFacetFallback();
+          throw error;
+        }
+      },
+      loadCatalogue: function () {
+        return loadProducts(false);
+      },
+      loadDiscovery: function () {
+        return discoveryLoaded ? undefined : loadDiscoveryCatalog();
+      },
+      loadRecentlyViewed: loadRecentlyViewed
+    });
+
+    if (startup.catalogue.status === "failed" && startup.catalogue.error) {
+      setStatus("We couldn’t load the library just now. Check your connection and try again.", true, "error");
       elements.diagnostics.hidden = false;
-      elements.diagnosticText.textContent = error.message || "The catalogue setup could not be reached.";
-      elements.discoveryStatus.textContent = "Discovery data could not be loaded. Check the catalog connection and retry.";
+      elements.diagnosticText.textContent = startup.catalogue.error.message || "The catalogue request failed.";
     }
+    if (startup.discovery.status === "failed") showDiscoveryFallback();
+    if (startup.recentlyViewed.status === "failed") showRecentlyViewedFallback();
   }
 
   initializeCatalog();

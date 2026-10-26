@@ -451,7 +451,7 @@ begin
 
   insert into public.payment_events (provider, provider_event_id, event_type)
   values (payment_provider, provider_event_id, provider_event_type)
-  on conflict (provider, provider_event_id) do nothing
+  on conflict on constraint payment_events_provider_provider_event_id_key do nothing
   returning id into inserted_event_id;
 
   if inserted_event_id is null then

@@ -2,6 +2,23 @@ begin;
 
 create extension if not exists pgcrypto;
 
+create or replace function public.product_search_document(
+  product_title text,
+  product_description text,
+  product_tags text[]
+)
+returns tsvector
+language sql
+immutable
+set search_path = ''
+as $$
+  select to_tsvector(
+    'simple',
+    coalesce(product_title, '') || ' ' || coalesce(product_description, '') || ' ' ||
+    coalesce(array_to_string(product_tags, ' '), '')
+  );
+$$;
+
 create table public.user_roles (
   user_id uuid primary key references auth.users (id) on delete cascade,
   role text not null check (role in ('user', 'creator', 'admin')),
@@ -47,13 +64,16 @@ create table public.products (
     and file_path ~ '^[0-9a-f-]{36}/[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(pdf|zip|docx|pptx|xlsx)$'
   ),
   search_document tsvector generated always as (
-    to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(description, '') || ' ' || array_to_string(tags, ' '))
+    public.product_search_document(title, description, tags)
   ) stored,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint products_file_path_not_empty check (length(trim(file_path)) > 0),
   constraint products_preview_path_safe check (
     preview_path is null or preview_path ~ '^[0-9a-f-]{36}/[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(png|jpg|webp)$'
+  ),
+  constraint products_preview_path_belongs_to_product check (
+    preview_path is null or preview_path like id::text || '/%'
   ),
   constraint products_published_free_only check (status <> 'published' or price_minor = 0)
 );
@@ -609,8 +629,8 @@ begin
     where id = 'product-files';
   if not found
     or private_bucket.public
-    or private_bucket.file_size_limit <> 52428800
-    or private_bucket.allowed_mime_types <> array[
+    or private_bucket.file_size_limit is distinct from 52428800
+    or private_bucket.allowed_mime_types is distinct from array[
       'application/pdf', 'application/zip',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -625,8 +645,8 @@ begin
     where id = 'product-previews';
   if not found
     or preview_bucket.public
-    or preview_bucket.file_size_limit <> 2097152
-    or preview_bucket.allowed_mime_types <> array['image/png', 'image/jpeg', 'image/webp'] then
+    or preview_bucket.file_size_limit is distinct from 2097152
+    or preview_bucket.allowed_mime_types is distinct from array['image/png', 'image/jpeg', 'image/webp'] then
     raise exception 'Existing product-previews bucket does not match the required BookWell configuration; review it manually.';
   end if;
 end;
@@ -635,7 +655,13 @@ $$;
 create policy "Authorized users can download published product files" on storage.objects
 for select to anon, authenticated using (
   bucket_id = 'product-files'
-  and public.can_download_product(((storage.foldername(name))[1])::uuid)
+  and public.can_download_product(
+    case
+      when (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        then ((storage.foldername(name))[1])::uuid
+      else null
+    end
+  )
 );
 create policy "Admins manage product files" on storage.objects
 for all to authenticated using (bucket_id = 'product-files' and public.has_role('admin'))

@@ -6,6 +6,7 @@
   const client = accountClient?.client || null;
   const inlineAuthEnabled = document.body.hasAttribute("data-inline-auth");
   const elements = {
+    accountNav: document.getElementById("account-nav"),
     status: document.getElementById("account-status"),
     auth: document.getElementById("account-auth"),
     dashboard: document.getElementById("account-dashboard"),
@@ -21,10 +22,25 @@
     savedCount: document.getElementById("account-saved-count"),
     libraryCount: document.getElementById("account-library-count"),
     saved: document.getElementById("account-saved-products"),
-    library: document.getElementById("account-library-products"),
     recent: document.getElementById("account-recent"),
     purchases: document.getElementById("account-purchases"),
     purchaseStatus: document.getElementById("account-purchase-status"),
+    purchaseProducts: document.getElementById("account-purchased-products"),
+    purchasesStatus: document.getElementById("account-purchases-status"),
+    purchasesMore: document.getElementById("account-purchases-more"),
+    purchasesRetry: document.getElementById("account-purchases-retry"),
+    purchasesCount: document.getElementById("account-purchases-count"),
+    freeProducts: document.getElementById("account-free-products"),
+    freeStatus: document.getElementById("account-free-status"),
+    freeMore: document.getElementById("account-free-more"),
+    freeRetry: document.getElementById("account-free-retry"),
+    freeCount: document.getElementById("account-free-count"),
+    otherPanel: document.getElementById("account-other-panel"),
+    otherProducts: document.getElementById("account-other-products"),
+    otherStatus: document.getElementById("account-other-status"),
+    otherMore: document.getElementById("account-other-more"),
+    otherRetry: document.getElementById("account-other-retry"),
+    otherCount: document.getElementById("account-other-count"),
     profile: document.getElementById("account-profile"),
     signOut: document.getElementById("account-signout")
   };
@@ -36,12 +52,83 @@
   let profileExists = false;
   let purchasePolls = 0;
   let purchasePollTimer = null;
+  let purchaseHistoryRows = [];
+  let ownedProductIds = new Set();
+  let checkedProductIds = new Set();
+  let checkedOwnedProductIds = new Set();
+  let accessStatus = client ? "loading" : "signed_out";
+  let accessComplete = false;
+
+  const LIBRARY_PAGE_SIZE = 24;
+  const librarySections = {
+    purchases: {
+      label: "purchases",
+      loadingLabel: "Loading purchases…",
+      emptyLabel: "No provider-verified purchases with current access yet.",
+      grid: elements.purchaseProducts,
+      status: elements.purchasesStatus,
+      more: elements.purchasesMore,
+      retry: elements.purchasesRetry,
+      count: elements.purchasesCount,
+      panel: null,
+      rows: [],
+      cursor: null,
+      hasMore: true,
+      loading: false,
+      loaded: false,
+      error: null,
+      requestId: 0
+    },
+    free: {
+      label: "free downloads",
+      loadingLabel: "Loading free downloads…",
+      emptyLabel: "No published free downloads are available right now.",
+      grid: elements.freeProducts,
+      status: elements.freeStatus,
+      more: elements.freeMore,
+      retry: elements.freeRetry,
+      count: elements.freeCount,
+      panel: null,
+      rows: [],
+      cursor: null,
+      hasMore: true,
+      loading: false,
+      loaded: false,
+      error: null,
+      requestId: 0
+    },
+    additional: {
+      label: "additional access",
+      loadingLabel: "Loading additional access…",
+      emptyLabel: "No other authorized resources are available.",
+      grid: elements.otherProducts,
+      status: elements.otherStatus,
+      more: elements.otherMore,
+      retry: elements.otherRetry,
+      count: elements.otherCount,
+      panel: elements.otherPanel,
+      rows: [],
+      cursor: null,
+      hasMore: true,
+      loading: false,
+      loaded: false,
+      error: null,
+      requestId: 0
+    }
+  };
 
   function setStatus(message, isError) {
     elements.status.textContent = message;
     elements.status.hidden = !message;
     elements.status.setAttribute("role", isError ? "alert" : "status");
     elements.status.classList.toggle("account-error", Boolean(isError));
+  }
+
+  function updateAccountNavigation(session) {
+    if (!elements.accountNav) return;
+    const navigation = core.accountNavigation(session);
+    elements.accountNav.textContent = navigation.label;
+    elements.accountNav.href = navigation.href;
   }
 
   function setBusy(form, busy, submitText) {
@@ -70,6 +157,93 @@
 
   function isEmailVerified(user) {
     return core.isEmailVerified(user);
+  }
+
+  function accessSnapshot() {
+    const signedIn = core.isSignedIn({ user: currentUser }) && isEmailVerified(currentUser);
+    return {
+      signedIn: signedIn,
+      status: signedIn ? accessStatus : "signed_out",
+      complete: signedIn ? accessComplete : true,
+      isChecked: function (productId) {
+        return signedIn && accessStatus === "ready" &&
+          core.isProductId(productId) && checkedProductIds.has(productId);
+      },
+      isOwned: function (productId) {
+        return signedIn && accessStatus === "ready" &&
+          core.isProductId(productId) && ownedProductIds.has(productId);
+      }
+    };
+  }
+
+  function notifyAccessChange() {
+    window.dispatchEvent(new CustomEvent("bookwell:accesschange"));
+  }
+
+  function beginAccessLoad() {
+    accessStatus = client ? "loading" : "signed_out";
+    accessComplete = false;
+    ownedProductIds = new Set();
+    checkedProductIds = new Set();
+    checkedOwnedProductIds = new Set();
+    notifyAccessChange();
+  }
+
+  function clearAccess() {
+    accessStatus = "signed_out";
+    accessComplete = true;
+    ownedProductIds = new Set();
+    checkedProductIds = new Set();
+    checkedOwnedProductIds = new Set();
+    purchaseHistoryRows = [];
+    resetLibrarySections();
+    notifyAccessChange();
+  }
+
+  function updateLibraryAccess() {
+    const purchases = librarySections.purchases;
+    const additional = librarySections.additional;
+    const required = [purchases, additional];
+    const settled = required.every((state) => state.loaded || Boolean(state.error));
+    const failed = required.some((state) => !state.loaded && Boolean(state.error));
+    const owned = new Set(checkedOwnedProductIds);
+    [purchases, additional].forEach((state) => {
+      state.rows.forEach((product) => {
+        if (core.isProductId(product?.id)) owned.add(product.id);
+      });
+    });
+    ownedProductIds = owned;
+    if (!settled) {
+      accessStatus = "loading";
+      accessComplete = false;
+    } else if (failed) {
+      accessStatus = "error";
+      accessComplete = false;
+    } else {
+      accessStatus = "ready";
+      accessComplete = !purchases.hasMore && !additional.hasMore;
+    }
+    notifyAccessChange();
+  }
+
+  async function checkProductAccess(productId) {
+    if (!client || !accessSnapshot().signedIn || !core.isProductId(productId)) return false;
+    const { data, error } = await client.rpc("can_download_product", { target_product: productId });
+    if (error) throw error;
+    checkedProductIds.add(productId);
+    if (data === true) {
+      checkedOwnedProductIds.add(productId);
+      ownedProductIds.add(productId);
+      accessStatus = "ready";
+    }
+    notifyAccessChange();
+    return data === true;
+  }
+
+  async function refreshAccess() {
+    if (!client || !currentUser) return false;
+    await loadDashboard(currentUser);
+    return accessStatus === "ready";
   }
 
   function friendlyAuthError(error) {
@@ -111,13 +285,18 @@
     if (createdAt) {
       addText(card, "p", "Download link authorized " + new Date(createdAt).toLocaleDateString(), "account-muted");
     }
+    if (!saved && product.status && !["published"].includes(product.status)) {
+      addText(card, "p", "Archived listing — your existing access remains available.", "account-muted");
+    }
     const actions = document.createElement("div");
     actions.className = "product-actions";
-    const details = document.createElement("a");
-    details.className = "button secondary";
-    details.href = "#product/" + encodeURIComponent(product.slug);
-    details.textContent = "Resource details";
-    actions.appendChild(details);
+    if (saved || !product.status || product.status === "published") {
+      const details = document.createElement("a");
+      details.className = "button secondary";
+      details.href = "#product/" + encodeURIComponent(product.slug);
+      details.textContent = "Resource details";
+      actions.appendChild(details);
+    }
     if (saved) {
       const remove = document.createElement("button");
       remove.type = "button";
@@ -130,7 +309,15 @@
       download.type = "button";
       download.className = "button";
       download.textContent = "Download";
-      download.addEventListener("click", () => window.BookWellMarketplace?.downloadProduct(product));
+      download.addEventListener("click", () => {
+        if (!window.BookWellMarketplace?.downloadProduct) {
+          setStatus("Secure downloads are unavailable until the marketplace script loads.", true);
+          return;
+        }
+        window.BookWellMarketplace.downloadProduct(product, {
+          onStatus: function (message, isError) { setStatus(message, isError); }
+        });
+      });
       actions.appendChild(download);
     }
     card.appendChild(actions);
@@ -147,12 +334,117 @@
     }
     rows.forEach((row) => {
       const product = row.product || row;
-      if (product?.status && product.status !== "published") return;
       container.appendChild(productCard(product, saved, saved ? null : row.created_at));
     });
   }
 
+  function updateLibraryCount() {
+    const sections = [librarySections.purchases, librarySections.free, librarySections.additional];
+    const loaded = sections.reduce((total, state) => total + state.rows.length, 0);
+    const hasMore = sections.some((state) => state.loaded && state.hasMore && !state.error);
+    elements.libraryCount.textContent = String(loaded) + (hasMore ? "+" : "");
+    sections.forEach((state) => {
+      const sectionHasMore = state.loaded && state.hasMore && !state.error;
+      state.count.textContent = String(state.rows.length) + (sectionHasMore ? "+" : "");
+    });
+  }
+
+  function renderLibrarySection(section) {
+    const state = librarySections[section];
+    const loadedMessage = state.loaded ? "More " + state.label : "Your " + state.label;
+    state.grid.setAttribute("aria-busy", String(state.loading));
+    state.grid.replaceChildren();
+    if (!state.rows.length && state.loaded && !state.error) {
+      addText(state.grid, "p", state.emptyLabel, "account-empty");
+    } else {
+      state.rows.forEach((product) => {
+        state.grid.appendChild(productCard(product, false));
+      });
+    }
+
+    let statusMessage = "";
+    let statusIsError = false;
+    if (state.loading) {
+      statusMessage = state.rows.length ? "Loading more " + state.label + "…" : state.loadingLabel;
+    } else if (state.error) {
+      statusMessage = loadedMessage + " could not be loaded. Check your connection and retry.";
+      statusIsError = true;
+    }
+    state.status.textContent = statusMessage;
+    state.status.hidden = !statusMessage;
+    state.status.setAttribute("role", statusIsError ? "alert" : "status");
+    state.status.classList.toggle("account-error", statusIsError);
+
+    state.more.hidden = !(state.loaded && state.hasMore && !state.loading && !state.error);
+    state.retry.hidden = !(state.error && !state.loading);
+    state.more.disabled = state.loading;
+    state.retry.disabled = state.loading;
+    if (state.panel) {
+      state.panel.hidden = state.loaded && !state.rows.length && !state.error && !state.loading;
+    }
+    updateLibraryCount();
+  }
+
+  function resetLibrarySections() {
+    Object.keys(librarySections).forEach((section) => {
+      const state = librarySections[section];
+      state.requestId += 1;
+      state.rows = [];
+      state.cursor = null;
+      state.hasMore = true;
+      state.loading = false;
+      state.loaded = false;
+      state.error = null;
+      renderLibrarySection(section);
+    });
+    updateLibraryCount();
+    renderPurchaseHistory(purchaseHistoryRows);
+  }
+
+  async function loadLibrarySection(section, options) {
+    const state = librarySections[section];
+    if (!client || !currentUser || state.loading) return;
+    const append = Boolean(options?.append) && state.loaded;
+    if (append && !state.hasMore) return;
+    const user = currentUser;
+    const requestId = ++state.requestId;
+    const cursor = append ? state.cursor : null;
+    if (!append) {
+      state.rows = [];
+      state.cursor = null;
+      state.hasMore = true;
+      state.loaded = false;
+    }
+    state.loading = true;
+    state.error = null;
+    renderLibrarySection(section);
+    if (section === "purchases") renderPurchaseHistory(purchaseHistoryRows);
+
+    try {
+      const request = core.libraryPageRequest(section, cursor, LIBRARY_PAGE_SIZE);
+      const { data, error } = await client.rpc(request.rpc, request.args);
+      if (currentUser?.id !== user.id || state.requestId !== requestId) return;
+      if (error) throw error;
+      const page = core.libraryPage(data, LIBRARY_PAGE_SIZE, section);
+      state.rows = append ? core.mergeLibraryRows(state.rows, page.rows) : page.rows;
+      state.cursor = page.cursor;
+      state.hasMore = page.hasMore;
+      state.loaded = true;
+      state.error = null;
+    } catch (error) {
+      if (currentUser?.id !== user.id || state.requestId !== requestId) return;
+      state.error = error;
+    }
+
+    state.loading = false;
+    renderLibrarySection(section);
+    if (section === "purchases") renderPurchaseHistory(purchaseHistoryRows);
+    if (section === "purchases" || section === "additional") updateLibraryAccess();
+  }
+
   function renderPurchaseHistory(rows) {
+    const purchaseProducts = librarySections.purchases.rows;
+    const purchasesState = librarySections.purchases;
     elements.purchases.replaceChildren();
     if (!rows.length) {
       addText(elements.purchases, "p", "Your verified BookWell purchases will appear here.", "purchase-empty");
@@ -162,7 +454,11 @@
       const row = document.createElement("article");
       row.className = "purchase-row";
       const item = purchase.order_items?.[0];
-      addText(row, "strong", item?.product?.title || "BookWell product");
+      const downloadProduct = window.BookWellCommerceCore.purchaseDownloadProduct(purchase, purchaseProducts);
+      const publicProduct = downloadProduct?.status === "published"
+        ? downloadProduct
+        : item?.product?.status === "published" ? item.product : null;
+      addText(row, "strong", downloadProduct?.title || item?.product?.title || "BookWell product");
       addText(row, "span", window.BookWellMarketplaceCore.formatPrice(
         purchase.total_minor, purchase.currency, navigator.language
       ));
@@ -174,12 +470,41 @@
               state === "refunded" ? "Refunded" :
                 state === "partially_refunded" ? "Partially refunded" : "Status unavailable");
       addText(row, "span", new Date(purchase.created_at).toLocaleDateString());
-      if (state === "verified" && item?.product?.slug) {
+      const actions = document.createElement("div");
+      actions.className = "purchase-actions";
+      if (state === "verified" && publicProduct?.slug) {
         const details = document.createElement("a");
-        details.href = "#product/" + encodeURIComponent(item.product.slug);
+        details.className = "button secondary";
+        details.href = "#product/" + encodeURIComponent(publicProduct.slug);
         details.textContent = "Open resource";
-        row.appendChild(details);
+        actions.appendChild(details);
       }
+      if (state === "verified" && downloadProduct) {
+        const download = document.createElement("button");
+        download.type = "button";
+        download.className = "button";
+        download.textContent = "Download";
+        download.addEventListener("click", () => {
+          if (!window.BookWellMarketplace?.downloadProduct) {
+            setStatus("Secure downloads are unavailable until the marketplace script loads.", true);
+            return;
+          }
+          window.BookWellMarketplace.downloadProduct(downloadProduct, {
+            onStatus: function (message, isError) { setStatus(message, isError); }
+          });
+        });
+        actions.appendChild(download);
+      } else if (state === "verified") {
+        const message = purchasesState.loading && !purchasesState.loaded
+          ? "Checking current download access…"
+          : purchasesState.error && !purchasesState.loaded
+            ? "Current download access could not be loaded. Retry My Purchases."
+            : purchasesState.hasMore
+              ? "This purchase is in an older page. Load more purchases to confirm download access."
+              : "Download unavailable: current server-side access could not be confirmed.";
+        addText(actions, "span", message, "purchase-unavailable");
+      }
+      if (actions.childElementCount) row.appendChild(actions);
       elements.purchases.appendChild(row);
     });
   }
@@ -232,38 +557,42 @@
 
   async function loadDashboard(user) {
     const request = ++dashboardRequest;
+    resetLibrarySections();
+    beginAccessLoad();
+    loadLibrarySection("purchases");
+    loadLibrarySection("free");
+    loadLibrarySection("additional");
     setStatus("Loading your BookWell account…", false);
-    const [profileResult, savedResult, libraryResult, recentResult, purchasesResult] = await Promise.all([
+    const [profileResult, savedResult, recentResult, purchasesResult] = await Promise.all([
       client.from("user_profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
       client.from("saved_products")
         .select("user_id,created_at,product:products!inner(id,title,slug,description,formats,preview_path,price_minor,currency,status)")
         .eq("user_id", user.id)
         .eq("product.status", "published")
         .order("created_at", { ascending: false }),
-      client.rpc("list_my_library_products"),
       client.from("download_events")
         .select("created_at,product:products!inner(id,title,slug)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5),
       client.from("orders")
-        .select("id,status,total_minor,currency,created_at,verified_at,order_items(unit_price_minor,currency,refunded_minor,product:products(title,slug))")
+        .select("id,status,total_minor,currency,created_at,verified_at,order_items(product_id,unit_price_minor,currency,refunded_minor,product:products(id,title,slug))")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(50)
     ]);
     if (request !== dashboardRequest || currentUser?.id !== user.id) return;
-    const failure = profileResult.error || savedResult.error || libraryResult.error || recentResult.error || purchasesResult.error;
+    const failure = profileResult.error || savedResult.error || recentResult.error || purchasesResult.error;
     if (failure) {
-      setStatus("Your account is signed in, but the account database migration is missing or unavailable. Review and apply the BookWell account migration to a disposable Supabase project.", true);
+      setStatus("Your account is signed in, but the account database migration is missing or unavailable. Review and apply the BookWell account and paginated-library migrations to a disposable Supabase project.", true);
       return;
     }
     const profile = profileResult.data;
     profileExists = Boolean(profile);
     const savedRows = core.ownPublishedSavedProducts(savedResult.data || [], user.id);
-    const libraryRows = core.publishedLibraryProducts(libraryResult.data || []);
     const recentRows = recentResult.data || [];
     const purchaseRows = purchasesResult.data || [];
+    purchaseHistoryRows = purchaseRows;
     savedProductIds = new Set(savedRows.map((row) => row.product.id));
     elements.displayName.value = profile?.display_name || "";
     elements.emailLabel.textContent = user.email || "Email not available";
@@ -271,9 +600,7 @@
       ? "Welcome, " + profile.display_name
       : "Welcome to your BookWell account";
     elements.savedCount.textContent = String(savedRows.length);
-    elements.libraryCount.textContent = libraryRows.length > 200 ? "200+" : String(libraryRows.length);
     renderProducts(elements.saved, savedRows, true);
-    renderProducts(elements.library, libraryRows.slice(0, 200), false);
     elements.recent.replaceChildren();
     if (!recentRows.length) {
       addText(elements.recent, "p", "No download links have been issued to this account yet.", "account-empty");
@@ -419,7 +746,7 @@
     setBusy(elements.forgot, true);
     setStatus("Sending password-reset instructions…", false);
     try {
-      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl() });
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: core.recoveryRedirectUrl(window.location.href) });
       if (error) throw error;
       setStatus("If an account exists for that address, password-reset instructions have been sent.", false);
     } catch (error) {
@@ -524,6 +851,11 @@
   });
   document.getElementById("account-show-forgot").addEventListener("click", () => showAuthForm(elements.forgot));
   document.getElementById("account-verification-resend").addEventListener("click", resendVerification);
+  Object.keys(librarySections).forEach((section) => {
+    const state = librarySections[section];
+    state.more.addEventListener("click", () => loadLibrarySection(section, { append: true }));
+    state.retry.addEventListener("click", () => loadLibrarySection(section, { append: state.rows.length > 0 }));
+  });
   window.addEventListener("hashchange", () => {
     if (inlineAuthEnabled && location.hash === "#account" && client && authEvent === "PASSWORD_RECOVERY") {
       elements.dashboard.hidden = true;
@@ -534,7 +866,10 @@
   });
 
   window.BookWellAccount = {
+    accessSnapshot: accessSnapshot,
+    checkProductAccess: checkProductAccess,
     isSaved: (productId) => savedProductIds.has(productId),
+    refreshAccess: refreshAccess,
     toggleSavedProduct: toggleSavedProduct
   };
 
@@ -549,8 +884,18 @@
       : "Use the Sign In page to access your BookWell account.";
     client.auth.onAuthStateChange((event, session) => {
       authEvent = event;
+      updateAccountNavigation(session);
+      if (event === "INITIAL_SESSION" && core.isRecoveryRequest(window.location.search)) {
+        window.location.replace(core.recoveryRedirectUrl(window.location.href));
+        return;
+      }
+      if (event === "PASSWORD_RECOVERY" && session && !inlineAuthEnabled) {
+        window.location.replace(core.recoveryRedirectUrl(window.location.href));
+        return;
+      }
       if (session?.user && !isEmailVerified(session.user)) {
         currentUser = null;
+        clearAccess();
         elements.email.value = session.user.email || elements.email.value;
         elements.auth.hidden = !inlineAuthEnabled;
         elements.dashboard.hidden = true;
@@ -562,6 +907,8 @@
         return;
       }
       currentUser = session?.user || null;
+      if (currentUser) beginAccessLoad();
+      else clearAccess();
       elements.auth.hidden = !inlineAuthEnabled || Boolean(currentUser);
       elements.dashboard.hidden = !currentUser;
       elements.verify.hidden = true;
