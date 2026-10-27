@@ -4,21 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Sign in to your BookWell account to access your library and saved learning resources.">
-  <meta name="theme-color" content="#faf9f6">
+  <meta name="theme-color" content="#FAF8F2">
   <title>Sign In | BookWell</title>
   <link rel="icon" type="image/png" href="bookwell_icon.png">
   <style>
     * { box-sizing: border-box; }
     :root {
       color-scheme: light;
-      --page: #faf9f6;
-      --surface: #fff;
-      --green: #245b45;
-      --green-dark: #183e2f;
-      --sage: #edf3ed;
-      --text: #191919;
-      --muted: #737373;
-      --line: #e8e5df;
+      --page: #FAF8F2;
+      --surface: #FFFFFF;
+      --green: #173F35;
+      --green-dark: #173F35;
+      --green-secondary: #285C4D;
+      --green-hover: #397563;
+      --sage: #E8F1E9;
+      --cream: #F1EDE3;
+      --gold: #B89A5A;
+      --success-bg: #E8F1E9;
+      --error-bg: #F8E8E5;
+      --text: #242923;
+      --muted: #73776D;
+      --line: #E3DED2;
       --serif: Georgia, "Times New Roman", serif;
       --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
@@ -34,7 +40,7 @@
     }
     a { color: var(--green); text-underline-offset: 0.2em; }
     a:hover { color: var(--green-dark); }
-    :focus-visible { outline: 3px solid #328657; outline-offset: 3px; }
+    :focus-visible { outline: 3px solid #397563; outline-offset: 3px; }
     button, input { font: inherit; }
     .auth-shell {
       display: grid;
@@ -45,7 +51,7 @@
       border: 1px solid var(--line);
       border-radius: 1.1rem;
       background: var(--surface);
-      box-shadow: 0 22px 70px rgba(25, 25, 25, 0.08);
+      box-shadow: 0 22px 70px rgba(36, 41, 35, 0.08);
     }
     .auth-welcome {
       display: flex;
@@ -69,7 +75,7 @@
     }
     .welcome-copy { max-width: 390px; }
     .welcome-copy h2 { margin: 0 0 0.55rem; color: var(--green-dark); font: 400 clamp(1.8rem, 3vw, 2.45rem)/1.15 var(--serif); letter-spacing: -0.035em; }
-    .welcome-copy p { margin: 0; color: #59665d; line-height: 1.75; }
+    .welcome-copy p { margin: 0; color: #73776D; line-height: 1.75; }
     .auth-panel {
       display: flex;
       min-width: 0;
@@ -83,7 +89,7 @@
     .back-link:hover { color: var(--green); }
     h1 { margin: 0; color: var(--green-dark); font: 400 clamp(2rem, 4vw, 2.65rem)/1.15 var(--serif); letter-spacing: -0.035em; }
     .auth-intro { margin: 0.6rem 0 2rem; color: var(--muted); }
-    #account-status { margin: 0 0 1.15rem; color: #59665d; font-size: 0.9rem; }
+    #account-status { margin: 0 0 1.15rem; color: #73776D; font-size: 0.9rem; }
     #account-status:empty { display: none; }
     #account-status.account-error { color: #8a322b; }
     .auth-form[hidden], #account-verification[hidden] { display: none; }
@@ -93,19 +99,19 @@
     .auth-form-signup h2 { margin-bottom: 1rem; }
     .auth-form-signup .field { margin-bottom: 0.85rem; }
     .field { display: grid; gap: 0.45rem; margin-bottom: 1.1rem; }
-    .field label { color: #3f4942; font-size: 0.88rem; font-weight: 600; }
+    .field label { color: #242923; font-size: 0.88rem; font-weight: 600; }
     .field input {
       width: 100%;
       min-height: 54px;
       padding: 0.8rem 0.95rem;
-      border: 1px solid #d9d8d2;
+      border: 1px solid #E3DED2;
       border-radius: 0.55rem;
-      background: #fff;
+      background: #FFFFFF;
       color: var(--text);
       transition: border-color 150ms ease, box-shadow 150ms ease;
     }
-    .field input::placeholder { color: #999a94; }
-    .field input:focus { border-color: #71917b; outline: 0; box-shadow: 0 0 0 3px rgba(36, 91, 69, 0.12); }
+    .field input::placeholder { color: #73776D; }
+    .field input:focus { border-color: #73776D; outline: 0; box-shadow: 0 0 0 3px rgba(36, 91, 69, 0.12); }
     .password-wrap { position: relative; }
     .password-wrap input { padding-right: 3.2rem; }
     .password-toggle {
@@ -117,10 +123,10 @@
       border: 0;
       border-radius: 0.4rem;
       background: transparent;
-      color: #64746a;
+      color: #73776D;
       cursor: pointer;
     }
-    .password-toggle:hover { background: #f3f5f2; }
+    .password-toggle:hover { background: #F1EDE3; }
     .password-toggle svg { width: 20px; height: 20px; }
     .auth-options { display: flex; align-items: center; justify-content: flex-end; margin: 0.1rem 0 1.5rem; }
     .text-button { padding: 0; border: 0; background: transparent; color: var(--green); cursor: pointer; font-size: 0.88rem; font-weight: 600; text-decoration: none; }
@@ -144,9 +150,9 @@
     .submit-button:active { transform: translateY(1px); }
     .submit-button:disabled { cursor: wait; opacity: 0.7; }
     .auth-switch { margin: 1.4rem 0 0; color: var(--muted); text-align: center; font-size: 0.9rem; }
-    #account-verification { margin-top: 1.2rem; padding: 1rem; border: 1px solid #dfe8e1; border-radius: 0.6rem; background: #f6f9f5; }
-    #account-verification p { margin: 0 0 0.7rem; color: #4f5e52; font-size: 0.9rem; }
-    .setup-note { margin-top: 1.15rem; padding: 0.85rem 0.95rem; border-radius: 0.5rem; background: #f5f4ef; color: #6c6a62; font-size: 0.82rem; }
+    #account-verification { margin-top: 1.2rem; padding: 1rem; border: 1px solid #E3DED2; border-radius: 0.6rem; background: #F1EDE3; }
+    #account-verification p { margin: 0 0 0.7rem; color: #242923; font-size: 0.9rem; }
+    .setup-note { margin-top: 1.15rem; padding: 0.85rem 0.95rem; border-radius: 0.5rem; background: #F1EDE3; color: #73776D; font-size: 0.82rem; }
     @media (max-width: 760px) {
       body { display: block; padding: 1rem; }
       .auth-shell { width: min(100%, 520px); min-height: 0; grid-template-columns: minmax(0, 1fr); margin: 0 auto; }

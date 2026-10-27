@@ -523,9 +523,9 @@ test("catalogue query construction preserves filters, selected currency, sorting
 
   test("account actions use modern accessible styling and the account section stays white", () => {
     const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-    assert.match(html, /#account\.highlight \{ background: #fff; \}/);
+    assert.match(html, /#account\.highlight \{ background: #FFFFFF; }/);
     assert.match(html, /\.account-links button \{[\s\S]*?appearance: none;[\s\S]*?border-radius: 8px/);
-    assert.match(html, /\.account-links #account-show-signup \{[\s\S]*?background: var\(--green\);[\s\S]*?color: #fff/);
+    assert.match(html, /\.account-links #account-show-signup \{[\s\S]*?background: var\(--green\);[\s\S]*?color: #FFFFFF/);
     assert.match(html, /\.account-links button:focus-visible/);
     assert.match(html, /<section id="volunteer" class="highlight">/);
   });
@@ -1338,9 +1338,9 @@ test("responsive navigation and accessible reduced-motion styles are present", (
 
 test("marketplace presentation uses editorial tokens and real creator attribution", () => {
   const marketplace = fs.readFileSync(path.join(root, "marketplace.js"), "utf8");
-  assert.match(index, /--page:\s*#faf9f6/i);
-  assert.match(index, /--text:\s*#191919/i);
-  assert.match(index, /--green:\s*#245b45/i);
+  assert.match(index, /--page:\s*#FAF8F2/i);
+  assert.match(index, /--text:\s*#242923/i);
+  assert.match(index, /--green:\s*#173F35/i);
   assert.match(index, /--font-editorial:\s*Georgia/);
   assert.match(index, /object-fit:\s*contain/);
   assert.match(marketplace, /typeof product\.creator_name === "string" && product\.creator_name\.trim\(\)/);
