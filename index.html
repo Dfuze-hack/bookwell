@@ -1043,7 +1043,7 @@
 
   <header class="hero" id="top">
     <div class="hero-copy">
-      <span class="hero-eyebrow">—   A world of learning</span>
+      <span class="hero-eyebrow">—   A world of learning</span>
       <h1>Find your next great <span class="hero-highlight">learning</span> resource.</h1>
       <p>Explore thoughtfully organized books and digital learning materials by subject, format, and language.</p>
       <form id="hero-search-form" class="hero-search" role="search">
@@ -1053,7 +1053,7 @@
           <path d="m15.5 15.5 4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
         </svg>
         <input id="hero-search" type="search" placeholder="Search by subject or topic" autocomplete="off" list="discovery-search-suggestions">
-        <button class="button" type="submit">Search  →</button>
+        <button class="button" type="submit">Search  →</button>
       </form>
       <datalist id="discovery-search-suggestions"></datalist>
       <div class="hero-topics" hidden>
@@ -1152,7 +1152,7 @@
 
   <section id="library">
     <div class="library-heading">
-      <span class="library-eyebrow">—   A world of learning</span>
+      <span class="library-eyebrow">—   A world of learning</span>
       <h2>The Library</h2>
       <p>Discover thoughtful learning resources for curious minds everywhere. Explore by subject, format, and price, then find the right resource for your next step.</p>
     </div>
@@ -1288,9 +1288,10 @@
         <div class="account-stat"><strong id="account-library-count">0</strong><span>library items loaded</span></div>
         <div class="account-stat"><strong id="account-saved-count">0</strong><span>saved resources</span></div>
       </div>
-      <nav class="account-subnav" aria-label="Account sections">
+      <!-- FIX: was <nav>, which inherited the sticky header styles and overlapped the main navbar -->
+      <div class="account-subnav" role="navigation" aria-label="Account sections">
         <a href="#account-library">My Library</a><a href="#account-saved">Saved products</a><a href="#account-settings-panel">Settings</a>
-      </nav>
+      </div>
       <section id="account-library" class="account-panel">
         <h3>My Library</h3>
         <p class="account-muted">Purchases and free downloads are listed separately and loaded in pages. Entitled archived listings remain available. Private files are checked again when you download.</p>
@@ -1413,13 +1414,14 @@
         <div class="studio-stat"><strong id="studio-published-products">—</strong><span>Published listings</span></div>
         <div class="studio-stat"><strong id="studio-archived-products">—</strong><span>Archived products</span></div>
       </div>
-      <nav class="studio-nav" aria-label="Creator Studio views">
+      <!-- FIX: was <nav>, which inherited the sticky header styles -->
+      <div class="studio-nav" role="navigation" aria-label="Creator Studio views">
         <button type="button" class="button secondary" data-studio-filter="mine" aria-pressed="true">My Products</button>
         <button type="button" class="button secondary" data-studio-filter="all" aria-pressed="false">All Products</button>
         <button type="button" class="button secondary" data-studio-filter="draft" aria-pressed="false">Drafts</button>
         <button type="button" class="button secondary" data-studio-filter="published" aria-pressed="false">Published Listings</button>
         <button type="button" class="button secondary" data-studio-filter="archived" aria-pressed="false">Archived Products</button>
-      </nav>
+      </div>
       <section id="studio-analytics" class="account-panel">
         <h3>Basic analytics</h3>
         <div class="studio-overview">
